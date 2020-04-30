@@ -36,6 +36,9 @@ class Creeper():
     def go_to_creeper(self):
         pass
 
+    def get_creeper(self):
+        pass
+
     def play(self):
         pass
 
