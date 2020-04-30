@@ -36,11 +36,8 @@ from TerminatorModule import Terminator
 import visao_module
 
 
-
-
 cv_image = None
-atraso = 1.5E9 # 1 segundo e meio. Em nanossegundos
-
+atraso = 1.5E9  # 1 segundo e meio. Em nanossegundos
 
 
 
@@ -54,10 +51,10 @@ if __name__ == "__main__":
 
     t800 = Terminator()
 
-    recebedor = rospy.Subscriber(
+    recebedor1 = rospy.Subscriber(
         topico_imagem, CompressedImage, t800.processaFrame, queue_size=4, buff_size=2**24)
     # Para recebermos notificacoes de que marcadores foram vistos
-    recebedor = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, t800.recebe)
+    recebedor2 = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, t800.recebe)
 
     print("Usando ", topico_imagem)
 
@@ -73,13 +70,8 @@ if __name__ == "__main__":
         # vel = Twist(Vector3(0,0,0), Vector3(0,0,math.pi/10.0))
 
         while not rospy.is_shutdown():
-            for r in t800.resultados:
-                print(r)
+            t800.dealWithResults()
             
-            vel = Twist(Vector3(0,0,0), Vector3(0,0,-0.1))
-            t800.velocidade_saida.publish(vel)
-            rospy.sleep(0.1)
 
     except rospy.ROSInterruptException:
         print("Ocorreu uma exceção com o rospy")
-
