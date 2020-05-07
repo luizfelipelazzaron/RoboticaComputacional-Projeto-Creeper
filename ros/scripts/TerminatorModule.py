@@ -53,14 +53,16 @@ class Terminator():
         # todos os atributos podem se autoconstruir a
         # partir de valores default
 
-        self.resultados = []
-        self.velocidade_saida = None
-
+        self.results = []
+        self.velocidadeSaida = None
+        self.target = None
+        self.tolerancia = 25
+        self.estacao = None
         # retirados de base_proj.py
         self.cv_image = None
         self.media = []
         self.centro = []
-        self.atraso = 1.5E9 
+        self.atraso = 1.5E9
         self.area = 0.0
         self.check_delay = False
         self.x = 0
@@ -71,29 +73,80 @@ class Terminator():
         self.tfl = 0
         self.tf_buffer = tf2_ros.Buffer()
         self.bridge = CvBridge()
-    
-    def move(self, vel):
-        self.velocidade_saida.publish(vel)
-    
+
+        self.task = {'procuraPista': True,
+                     'percorrerPista': False,
+                     'procuraCreeper': False,
+                     'pegarCreeper': False,
+                     'soltarCreeper': False,
+                     'procuraEstacao': False,
+                     }
+
+    def estadoAtual(self):
+        if self.task['procuraPista']:
+            self.procuraPista()
+        elif self.task['percorrerPista']:
+            self.percorrerPista()
+        if self.task['procuraCreeper']:
+            self.procuraCreeper()
+        elif self.task['procuraEstacao']:
+            self.procuraEstacao()
+        elif self.task['pegarCreeper']:
+            self.pegarCreeper()
+        elif self.task['soltarCreeper']:
+            self.soltarCreeper()
+
+    def procuraEstacao(self,estacao):
+    if not self.target:
+        for result in self.results:
+            if result[0] == "cat" and self.targetInCenter([result[2], result[3]]):
+                # print("self.velocidadeSaida:",self.velocidadeSaida)
+                # print(self.centro)
+                print("target detected:", result[0])
+                self.target = "cat"
+                self.stop()
+            else:
+                self.move(0, -0.1)
+                self.target = None
+
+    elif self.target == "cat":
+        self.move(1, 0)
+    else:
+        pass
+
+    def targetInCenter(self, targetPosition):
+        # targetPosition é da forma [(90, 141), (177, 265)]
+        # targetPosition[0] = canto superior esquerdo
+        # targetPosition[1] = canto inferior direito
+
+    xTargetCenter = (result[2][0] + result[3][0])/2
+    xTerminatorCenter = self.centro[0]
+
+    return abs(xTargetCenter-xTerminatorCenter) <= self.tolerancia
+
+    def move(self, velocidadeTangencial, velocidadeAngular):
+        velocidade = Twist(Vector3(velocidadeTangencial, 0, 0),
+                           Vector3(0, 0, velocidadeAngular))
+        self.velocidadeSaida.publish(velocidade)
+        rospy.sleep(0.1)
+
     def stop(self):
-        zero = Twist(Vector3(0,0,0), Vector3(0,0,0))
-        self.velocidade_saida.publish()
+        self.move(velocidadeTangencial=0, velocidadeAngular=0)
 
     def recebe(self, msg):
-
         for marker in msg.markers:
             self.id = marker.id
             marcador = "ar_marker_" + str(self.id)
 
-            print(self.tf_buffer.can_transform(self.frame, marcador, rospy.Time(0)))
+            print(self.tf_buffer.can_transform(
+                self.frame, marcador, rospy.Time(0)))
 
             # Terminamos
             print("id: {}".format(id))
 
-    def processaFrame(self, imagem):
+    def identificaEstacao(self, imagem):
         # print("frame")
         # global terminator.media
-        
         now = rospy.get_rostime()
         imgtime = imagem.header.stamp
         lag = now-imgtime  # calcula o lag
@@ -104,19 +157,19 @@ class Terminator():
             return
         try:
             antes = time.clock()
-            self.cv_image = self.bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
+            self.cv_image = self.bridge.compressed_imgmsg_to_cv2(
+                imagem, "bgr8")
             # Note que os resultados já são guardados automaticamente na variável
             # chamada resultados
-            self.centro, self.imagem, self.resultados = visao_module.processa(self.cv_image)
-            for r in self.resultados:
-                # print(r) - print feito para documentar e entender
-                # o resultado
+            self.centro, self.imagem, self.resultados = visao_module.processa(
+                self.cv_image)
+            for resultado in self.resultados:
+                estacao = resultado[2]
+                print(estacao)
                 pass
 
             depois = time.clock()
             # Desnecessário - Hough e MobileNet já abrem janelas
-            #cv2.imshow("Camera", cv_image)
+            # cv2.imshow("Camera", cv_image)
         except CvBridgeError as e:
             print('ex', e)
-
-
