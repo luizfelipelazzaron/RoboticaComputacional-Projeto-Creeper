@@ -96,23 +96,18 @@ class Terminator():
         elif self.task['soltarCreeper']:
             self.soltarCreeper()
 
-    def procuraEstacao(self,estacao):
-    if not self.target:
-        for result in self.results:
-            if result[0] == "cat" and self.targetInCenter([result[2], result[3]]):
-                # print("self.velocidadeSaida:",self.velocidadeSaida)
-                # print(self.centro)
-                print("target detected:", result[0])
-                self.target = "cat"
-                self.stop()
-            else:
-                self.move(0, -0.1)
-                self.target = None
-
-    elif self.target == "cat":
-        self.move(1, 0)
-    else:
-        pass
+    def procuraPista(self):
+        if self.targetInCenter([result[2], result[3]]):
+            print("target centralized:", result[0])
+            self.target = "cat"
+            self.stop()
+        else:
+            self.move(0, -0.1)
+            self.target = None
+        elif self.target == "cat":
+            self.move(1, 0)
+        else:
+            pass
 
     def targetInCenter(self, targetPosition):
         # targetPosition é da forma [(90, 141), (177, 265)]
