@@ -51,25 +51,24 @@ if __name__ == "__main__":
 
     t800 = Terminator()
 
-    recebedorEstacao = rospy.Subscriber(
-        topico_imagem, CompressedImage, t800.estadoAtual, queue_size=4, buff_size=2**24)
+    recebedor = rospy.Subscriber(
+        topico_imagem, CompressedImage, t800.acordar, queue_size=4, buff_size=2**24)
     # Para recebermos notificacoes de que marcadores foram vistos
     
-    recebedorId = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, t800.recebe)
+    # recebedorId = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, t800.recebe)
 
-    print("Usando ", topico_imagem)
+    # print("Usando ", topico_imagem)
 
-    t800.velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
+    t800.velocidadeSaida = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
     tolerancia = 25
     # Exemplo de categoria de resultados
     # [('chair', 86.965459585189819, (90, 141), (177, 265))]
 
     try:
-        # Inicializando - por default gira no sentido anti-horário
-        # vel = Twist(Vector3(0,0,0), Vector3(0,0,math.pi/10.0))
-
         while not rospy.is_shutdown():
-            t800.dealWithResults()
+            t800.estadoAtual()
+            pass
+            # t800.dealWithResults()
             
 
     except rospy.ROSInterruptException:

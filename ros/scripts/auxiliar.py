@@ -37,3 +37,41 @@ def scaneou(dado):
     global distancia
     distancia = np.array(dado.ranges).round(decimals=2)[0]
 
+
+#Funções do Projeto 2
+
+def auto_canny(image, sigma=0.33):
+    """apply automatic Canny edge detection using the computed median"""
+    v = np.median(image)
+    lower = int(max(0, (1.0 - sigma) * v))
+    upper = int(min(255, (1.0 + sigma) * v))
+    edged = cv2.Canny(image, lower, upper)
+    return edged
+
+def coeficientes( array ):
+    """Devolve uma tupla (m,n). m é o coeficiente angular e n é o coeficiente linear 
+    da reta que representa o conjunto de retas do array"""
+    if len(array) > 0:
+        # array[:,t] -> coluna t da matriz chamada array
+        x1, y1, x2, y2 = array[:,0], array[:,1], array[:,2], array[:,3]
+        # m1 = (y2 - y1)/(x2-x1)
+        m = (y2 - y1)/(x2 - x1)
+        # n1 = m1*x1 + y1
+        n = -m*x1 + y1
+        
+        m0 = round(np.median(m),2)
+        n0 = round(np.median(n),2)
+        return m0,n0
+    
+def tangente(linha) -> float:
+    "Devolve a tangente do ângulo formado entre a linha e a horizontal (no referencial da imagem)"
+    x1,y1,x2,y2 = linha[0]
+    return (y2-y1)/(x2-x1)
+
+def draw_line(img, linha, color:str):
+    color = colors[color]
+    x1,y1,x2,y2 = linha[0]
+    cv2.line(img, (x1, y1), (x2, y2), color, 2) 
+
+
+

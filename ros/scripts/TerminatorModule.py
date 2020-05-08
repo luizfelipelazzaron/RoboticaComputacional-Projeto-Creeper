@@ -53,12 +53,12 @@ class Terminator():
     def __init__(self):
         # todos os atributos podem se autoconstruir a
         # partir de valores default
-
         self.results = []
         self.velocidadeSaida = None
         self.target = None
         self.tolerance = 25
         self.estacao = None
+        self.image = None
         # retirados de base_proj.py
         self.cvImage = None
         self.media = []
@@ -88,6 +88,9 @@ class Terminator():
                      'soltarCreeper': False,        # a garra solta o creeper
                      'encerrar': False              # o robô encerra sua atividade
                      }
+
+    def acordar(self,imagem):
+        self.image = imagem
 
     def estadoAtual(self):
         if self.task['iniciar']:
@@ -122,17 +125,11 @@ class Terminator():
     def iniciar(self):
         try:
             self.task['iniciar'] = False
-            self.task['procurarPista'] = True
+            self.task['percorrerPista'] = True
         except:
             pass
 
     def procurarPista(self):
-        # Moveria para frente
-        # Se ele identificar algum obstáculo , ele começa a rotacionar
-        # Se ele identificar a pista, e encerra a task
-        move(0.1,0)
-        
-
         pass
     def alcancarPista(self):
         pass
@@ -193,7 +190,7 @@ class Terminator():
                 self.frame, marcador, rospy.Time(0)))
 
             # Terminamos
-            print("id: {}".format(id))
+            print("id: {}".format(self.id))
 
     def identificaEstacao(self, imagem):
         # print("frame")
