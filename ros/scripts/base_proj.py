@@ -51,25 +51,16 @@ if __name__ == "__main__":
 
     t800 = Terminator()
 
-<<<<<<< HEAD
     recebedorEstacao = rospy.Subscriber(
         topico_imagem, CompressedImage, t800.identificaEstacao, queue_size=4, buff_size=2**24)
     # Para recebermos notificacoes de que marcadores foram vistos
     
     recebedorId = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, t800.recebe)
-=======
-    recebedor1 = rospy.Subscriber(
-        topico_imagem, CompressedImage, t800.processaFrame, queue_size=4, buff_size=2**24)
-    # Para recebermos notificacoes de que marcadores foram vistos
-    recebedor2 = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, t800.recebe)
->>>>>>> 5052bd560ff0529269d5750d78a2a23acf3d5d78
 
     print("Usando ", topico_imagem)
 
     t800.velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
-
     tolerancia = 25
-
     # Exemplo de categoria de resultados
     # [('chair', 86.965459585189819, (90, 141), (177, 265))]
 

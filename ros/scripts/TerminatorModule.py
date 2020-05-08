@@ -3,7 +3,8 @@
 from __future__ import print_function, division
 
 __author__ = ["Cicero Tiago Carneiro Valentim",
-              "Luiz Felipe Lazzaron", "Thalia Loiola Silva"]
+              "Luiz Felipe Lazzaron",
+              "Thalia Loiola Silva"]
 
 import rospy
 import numpy as np
@@ -104,18 +105,17 @@ class Terminator():
         else:
             self.move(0, -0.1)
             self.target = None
-        elif self.target == "cat":
-            self.move(1, 0)
-        else:
-            pass
+            if self.target == "cat":
+                self.move(1, 0)
+            else:
+                pass
 
     def targetInCenter(self, targetPosition):
         # targetPosition é da forma [(90, 141), (177, 265)]
         # targetPosition[0] = canto superior esquerdo
         # targetPosition[1] = canto inferior direito
-
-    xTargetCenter = (result[2][0] + result[3][0])/2
-    xTerminatorCenter = self.centro[0]
+        xTargetCenter = (result[2][0] + result[3][0])/2
+        xTerminatorCenter = self.centro[0]
 
     return abs(xTargetCenter-xTerminatorCenter) <= self.tolerancia
 
