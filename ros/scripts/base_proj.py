@@ -52,7 +52,7 @@ if __name__ == "__main__":
     t800 = Terminator()
 
     recebedorEstacao = rospy.Subscriber(
-        topico_imagem, CompressedImage, t800.identificaEstacao, queue_size=4, buff_size=2**24)
+        topico_imagem, CompressedImage, t800.estadoAtual, queue_size=4, buff_size=2**24)
     # Para recebermos notificacoes de que marcadores foram vistos
     
     recebedorId = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, t800.recebe)

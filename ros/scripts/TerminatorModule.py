@@ -41,7 +41,7 @@ import visao_module
 
 width = "screen width"
 height = "screen height"
-tolerancia = 0.01
+tolerance = 0.01
 
 direction = {
     "right": Vector3(0, 0, 1),
@@ -57,47 +57,104 @@ class Terminator():
         self.results = []
         self.velocidadeSaida = None
         self.target = None
-        self.tolerancia = 25
+        self.tolerance = 25
         self.estacao = None
         # retirados de base_proj.py
-        self.cv_image = None
+        self.cvImage = None
         self.media = []
         self.centro = []
         self.atraso = 1.5E9
         self.area = 0.0
-        self.check_delay = False
+        self.checkDelay = False
         self.x = 0
         self.y = 0
         self.z = 0
         self.id = 0
         self.frame = "camera_link"
         self.tfl = 0
-        self.tf_buffer = tf2_ros.Buffer()
+        self.tfBuffer = tf2_ros.Buffer()
         self.bridge = CvBridge()
 
-        self.task = {'procuraPista': True,
-                     'percorrerPista': False,
-                     'procuraCreeper': False,
-                     'pegarCreeper': False,
-                     'soltarCreeper': False,
-                     'procuraEstacao': False,
+        self.task = {'iniciar': True,               # o robô inicia sua atividade
+                     'procurarPista': False,        # o robô procura visualmente a pista
+                     'alcancarPista': False,        # o robô vai em direção a pista
+                     'percorrerPista': False,       # o robô percorre a pista
+                     'procurarCreeper': False,      # o robô procura visualmente o creeper
+                     'alcancarCreeper': False,      # o robô vai em direção ao creeper
+                     'pegarCreeper': False,         # a garra pega o creeper
+                     'carregarCreeper': False,      # a garra retorna a posição inicial com o creeper
+                     'procurarEstacao': False,      # o robô procura visualmente a estação
+                     'alcancarEstacao': False,      # o robô vai em direção a estação
+                     'soltarCreeper': False,        # a garra solta o creeper
+                     'encerrar': False              # o robô encerra sua atividade
                      }
 
     def estadoAtual(self):
-        if self.task['procuraPista']:
-            self.procuraPista()
+        if self.task['iniciar']:
+            self.iniciar()
+        # Tasks relacionados a Pista
+        if self.task['procurarPista']:
+            self.procurarPista()
+        elif self.task['alcancarPista']:
+            self.procurarPista()
         elif self.task['percorrerPista']:
             self.percorrerPista()
-        if self.task['procuraCreeper']:
-            self.procuraCreeper()
-        elif self.task['procuraEstacao']:
-            self.procuraEstacao()
+        # Tasks relacionados ao Creeper
+        if self.task['procurarCreeper']:
+            self.procurarCreeper()
+        elif self.task['alcancarCreeper']:
+            self.alcancarCreeper()
         elif self.task['pegarCreeper']:
             self.pegarCreeper()
+        elif self.task['carregarCreeper']:
+            self.carregarCreeper()
         elif self.task['soltarCreeper']:
             self.soltarCreeper()
+        # Tasks relacionados à Estação
+        elif self.task['procurarEstacao']:
+            self.procurarEstacao()
+        elif self.task['alcancarEstacao']:
+            self.alcancarEstacao()
 
-    def procuraPista(self):
+        else:
+            pass
+
+    def iniciar(self):
+        try:
+            self.task['iniciar'] = False
+            self.task['procurarPista'] = True
+        except:
+            pass
+
+    def procurarPista(self):
+        # Moveria para frente
+        # Se ele identificar algum obstáculo , ele começa a rotacionar
+        # Se ele identificar a pista, e encerra a task
+        move(0.1,0)
+        
+
+        pass
+    def alcancarPista(self):
+        pass
+    def percorrerPista(self):
+        pass
+    def procurarCreeper(self):
+        pass
+    def alcancarCreeper(self):
+        pass
+    def pegarCreeper(self):
+        pass
+    def carregarCreeper(self):
+        pass
+    def procurarEstacao(self):
+        pass
+    def alcancarEstacao(self):
+        pass
+    def soltarCreeper(self):
+        pass
+
+
+    def procurarEstacao(self):
         if self.targetInCenter([result[2], result[3]]):
             print("target centralized:", result[0])
             self.target = "cat"
@@ -116,8 +173,7 @@ class Terminator():
         # targetPosition[1] = canto inferior direito
         xTargetCenter = (result[2][0] + result[3][0])/2
         xTerminatorCenter = self.centro[0]
-
-    return abs(xTargetCenter-xTerminatorCenter) <= self.tolerancia
+        return abs(xTargetCenter-xTerminatorCenter) <= self.tolerance
 
     def move(self, velocidadeTangencial, velocidadeAngular):
         velocidade = Twist(Vector3(velocidadeTangencial, 0, 0),
@@ -133,7 +189,7 @@ class Terminator():
             self.id = marker.id
             marcador = "ar_marker_" + str(self.id)
 
-            print(self.tf_buffer.can_transform(
+            print(self.tfBuffer.can_transform(
                 self.frame, marcador, rospy.Time(0)))
 
             # Terminamos
@@ -147,17 +203,17 @@ class Terminator():
         lag = now-imgtime  # calcula o lag
         delay = lag.nsecs
         # print("delay ", "{:.3f}".format(delay/1.0E9))
-        if delay > self.atraso and self.check_delay == True:
+        if delay > self.atraso and self.checkDelay == True:
             print("Descartando por causa do delay do frame:", delay)
             return
         try:
             antes = time.clock()
-            self.cv_image = self.bridge.compressed_imgmsg_to_cv2(
+            self.cvImage = self.bridge.compressed_imgmsg_to_cv2(
                 imagem, "bgr8")
             # Note que os resultados já são guardados automaticamente na variável
             # chamada resultados
             self.centro, self.imagem, self.resultados = visao_module.processa(
-                self.cv_image)
+                self.cvImage)
             for resultado in self.resultados:
                 estacao = resultado[2]
                 print(estacao)
@@ -165,6 +221,6 @@ class Terminator():
 
             depois = time.clock()
             # Desnecessário - Hough e MobileNet já abrem janelas
-            # cv2.imshow("Camera", cv_image)
+            # cv2.imshow("Camera", cvImage)
         except CvBridgeError as e:
             print('ex', e)
