@@ -145,7 +145,7 @@ class Terminator():
             self.move(0.5, 0)
         else:
             # self.stop()
-            self.move(0.1, self.whereTo(localTarget[0]))
+            self.move(0.08, self.whereTo(localTarget[0]))
         
         cv2.circle(self.cvImage, (localTarget[0], localTarget[1]), 10, (0, 255, 0), 2, 2)
         cv2.imshow("Terminator Vision", self.cvImage)
@@ -155,11 +155,11 @@ class Terminator():
         if x > self.visionWidth/2:
             # corrigir para a esquerda
             print("corrigir para a direita")
-            return -0.3
+            return -0.05
         elif x < self.visionWidth/2:
             print("corrigir para a esquerda")
             # corrigir para a direita
-            return 0.3
+            return 0.05
 
     def procurarCreeper(self):
         pass
@@ -319,11 +319,11 @@ class Terminator():
         try:
             left = np.array(left)
         except:
-            return 0, self.visionHeight/2
+            return 0, (self.visionHeight/2)
         try:
             right = np.array(right)
         except:
-            return self.visionWidth, self.visionHeight/2
+            return int(self.visionWidth), (self.visionHeight/2)
         # print("left:", left.shape)
         # print("right:", right.shape)
         # for leftLine in left:
@@ -342,7 +342,7 @@ class Terminator():
             m2, n2 = aux.coefficients(right)
             # print("m2,n2", m2, n2)
         except:
-            return self.visionWidth, int(self.visionHeight/2)
+            return int(self.visionWidth), int(self.visionHeight/2)
         # min() e max() servem para deixar o circulo sempre visível
         # X e Y são as coordenadas do ponto de encontro entre a reta média azul e a reta média vermelha
         X = max(0, min(int((n2-n1)/(m1-m2)), self.visionWidth))
