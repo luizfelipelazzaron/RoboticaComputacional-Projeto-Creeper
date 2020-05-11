@@ -35,6 +35,12 @@ from TerminatorModule import Terminator
 
 import visao_module
 
+# comando para ligar o mundo virtual: roslaunch my_simulation proj1_base_estreita.launch
+# comando para abrir a câmera do robô: rqt_image_view
+# comando para rodar esse controlador: rosrun ros base_proj.py
+# módulo de controle da garra: roslaunch turtlebot3_manipulation_moveit_config move_group.launch
+# GUI de interação com a garra: roslaunch turtlebot3_manipulation_gui turtlebot3_manipulation_gui.launch
+
 
 cv_image = None
 atraso = 1.5E9  # 1 segundo e meio. Em nanossegundos
@@ -51,8 +57,10 @@ if __name__ == "__main__":
 
     t800 = Terminator()
 
-    recebedor = rospy.Subscriber(
-        topico_imagem, CompressedImage, t800.acordar, queue_size=4, buff_size=2**24)
+    # recebedor = rospy.Subscriber(
+    #     topico_imagem, CompressedImage, t800.acordar, queue_size=4, buff_size=2**24)
+    recebedorEstacao = rospy.Subscriber(
+        topico_imagem, CompressedImage, t800.processImage, queue_size=4, buff_size=2**24)
     # Para recebermos notificacoes de que marcadores foram vistos
     
     # recebedorId = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, t800.recebe)
@@ -65,10 +73,11 @@ if __name__ == "__main__":
     # [('chair', 86.965459585189819, (90, 141), (177, 265))]
 
     try:
+        # Inicializando - por default gira no sentido anti-horário
+        # vel = Twist(Vector3(0,0,0), Vector3(0,0,math.pi/10.0))
+        print("Iniciando")
         while not rospy.is_shutdown():
             t800.estadoAtual()
-            pass
-            # t800.dealWithResults()
             
 
     except rospy.ROSInterruptException:
