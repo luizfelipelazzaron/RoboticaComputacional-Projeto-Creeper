@@ -37,8 +37,14 @@ def scaneou(dado):
     global distancia
     distancia = np.array(dado.ranges).round(decimals=2)[0]
 
-
+# --------------------------------------------------------------------------------
 #Funções do Projeto 2
+# --------------------------------------------------------------------------------
+
+colors = {
+    "vermelho":(0,0,255),
+    "azul":(255,0,0)
+}
 
 def auto_canny(image, sigma=0.33):
     """apply automatic Canny edge detection using the computed median"""
@@ -63,12 +69,13 @@ def coeficientes( array ):
         n0 = round(np.median(n),2)
         return m0,n0
     
-def tangente(linha) -> float:
+def tangente(linha):
     "Devolve a tangente do ângulo formado entre a linha e a horizontal (no referencial da imagem)"
     x1,y1,x2,y2 = linha[0]
-    return (y2-y1)/(x2-x1)
+    return float((y2-y1)/(x2-x1))
 
-def draw_line(img, linha, color:str):
+def draw_line(img, linha, color):
+    color = str(color)
     color = colors[color]
     x1,y1,x2,y2 = linha[0]
     cv2.line(img, (x1, y1), (x2, y2), color, 2) 
