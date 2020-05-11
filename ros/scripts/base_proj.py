@@ -35,44 +35,19 @@ from TerminatorModule import Terminator
 
 import visao_module
 
+# comando para ligar o mundo virtual: roslaunch my_simulation proj1_base_estreita.launch
+# comando para abrir a câmera do robô: rqt_image_view
+# comando para rodar esse controlador: rosrun ros base_proj.py
+# módulo de controle da garra: roslaunch turtlebot3_manipulation_moveit_config move_group.launch
+# GUI de interação com a garra: roslaunch turtlebot3_manipulation_gui turtlebot3_manipulation_gui.launch
 
-bridge = CvBridge()
 
 cv_image = None
-atraso = 1.5E9 # 1 segundo e meio. Em nanossegundos
+atraso = 1.5E9  # 1 segundo e meio. Em nanossegundos
 
 
-terminator = Terminator()
 
 # A função a seguir é chamada sempre que chega um novo frame
-def roda_todo_frame(imagem):
-    print("frame")
-    # global terminator.media
-    
-    now = rospy.get_rostime()
-    imgtime = imagem.header.stamp
-    lag = now-imgtime  # calcula o lag
-    delay = lag.nsecs
-    # print("delay ", "{:.3f}".format(delay/1.0E9))
-    if delay > terminator.atraso and terminator.check_delay == True:
-        print("Descartando por causa do delay do frame:", delay)
-        return
-    try:
-        antes = time.clock()
-        terminator.cv_image = bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
-        # Note que os resultados já são guardados automaticamente na variável
-        # chamada resultados
-        terminator.centro, terminator.imagem, terminator.resultados = visao_module.processa(terminator.cv_image)
-        for r in terminator.resultados:
-            # print(r) - print feito para documentar e entender
-            # o resultado
-            pass
-
-        depois = time.clock()
-        # Desnecessário - Hough e MobileNet já abrem janelas
-        #cv2.imshow("Camera", cv_image)
-    except CvBridgeError as e:
-        print('ex', e)
 
 
 if __name__ == "__main__":
@@ -80,30 +55,30 @@ if __name__ == "__main__":
 
     topico_imagem = "/camera/rgb/image_raw/compressed"
 
-    recebedor = rospy.Subscriber(
-        topico_imagem, CompressedImage, roda_todo_frame, queue_size=4, buff_size=2**24)
+    t800 = Terminator()
+
+    # recebedor = rospy.Subscriber(
+    #     topico_imagem, CompressedImage, t800.acordar, queue_size=4, buff_size=2**24)
+    recebedorEstacao = rospy.Subscriber(
+        topico_imagem, CompressedImage, t800.processImage, queue_size=4, buff_size=2**24)
     # Para recebermos notificacoes de que marcadores foram vistos
-    recebedor = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, terminator.recebe)
+    
+    # recebedorId = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, t800.recebe)
 
-    print("Usando ", topico_imagem)
+    # print("Usando ", topico_imagem)
 
-    terminator.velocidade_saida = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
-
+    t800.velocidadeSaida = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
     tolerancia = 25
-
     # Exemplo de categoria de resultados
     # [('chair', 86.965459585189819, (90, 141), (177, 265))]
 
     try:
         # Inicializando - por default gira no sentido anti-horário
         # vel = Twist(Vector3(0,0,0), Vector3(0,0,math.pi/10.0))
-
+        print("Iniciando")
         while not rospy.is_shutdown():
-            for r in terminator.resultados:
-                print(r)
-            # velocidade_saida.publish(vel)
-            rospy.sleep(0.1)
+            t800.estadoAtual()
+            
 
     except rospy.ROSInterruptException:
         print("Ocorreu uma exceção com o rospy")
-
