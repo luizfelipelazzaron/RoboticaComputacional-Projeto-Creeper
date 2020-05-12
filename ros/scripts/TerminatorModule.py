@@ -146,6 +146,7 @@ class Terminator():
     def alcancarPista(self):
         pass
 
+<<<<<<< HEAD
     def percorrerPista(self):
         if self.counter < self.counterLimit:
             try:
@@ -163,6 +164,14 @@ class Terminator():
             except:
                 self.counter += 1
                 print("contador: ", self.counter)
+=======
+       def percorrerPista(self):
+        localTarget = self.followPath()
+
+        if self.targetInCenter(localTarget):
+            print("linha reta")
+            self.move(0.5, 0)
+>>>>>>> 7935eaa77bb6dadb6618944af50c7142a8596305
         else:
             print("Deu certo")
             self.task['percorrerPista'] = False
