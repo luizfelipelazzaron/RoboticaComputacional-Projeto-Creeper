@@ -62,6 +62,7 @@ if __name__ == "__main__":
     recebedorEstacao = rospy.Subscriber(
         topico_imagem, CompressedImage, t800.processImage, queue_size=4, buff_size=2**24)
     # Para recebermos notificacoes de que marcadores foram vistos
+    recebe_scan = rospy.Subscriber("/scan", LaserScan, t800.scanTarget)
     
     # recebedorId = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, t800.recebe)
 
