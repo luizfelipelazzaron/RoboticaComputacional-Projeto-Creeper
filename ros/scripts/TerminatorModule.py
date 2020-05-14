@@ -57,6 +57,8 @@ class Terminator():
         self.tolerance = 20
         self.estacao = None
         self.image = None
+        self.counter = 0
+        self.counterLimit = 5
         # retirados de base_proj.py
         self.cvImage = None
         self.visionHeight = None
@@ -125,32 +127,47 @@ class Terminator():
     def iniciar(self):
         self.task['iniciar'] = False
         self.task['percorrerPista'] = True
+        self.task['procurarCreeper'] = True
 
     def procurarPista(self):
-        # Moveria para frente
-        # Se ele identificar algum obstáculo , ele começa a rotacionar
-        # Se ele identificar a pista, e encerra a task
-        # self.move(0.1, 0)
-
-        pass
+        if self.counter < self.counterLimit:
+            frame = self.cvImage
+            frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            cor_menor, cor_maior = aux.ranges([62, 100, 100])  # amarelo
+            centro = (frame.shape[1]//2, frame.shape[0]//2)
+        else:
+            print("mudando de estado")
+            self.task['procurarPista'] = False
+            self.task['percorrerPista'] = True
+            self.counter = 0
 
     def alcancarPista(self):
         pass
 
-       def percorrerPista(self):
-        localTarget = self.followPath()
+    def percorrerPista(self):
+        if self.counter < self.counterLimit:
+            try:
+                localTarget = self.followPath()
 
-        if self.targetInCenter(localTarget):
-            print("linha reta")
-            self.move(0.5, 0)
+                if self.targetInCenter(localTarget):
+                    print("linha reta")
+                    self.move(0.5, 0)
+                else:
+                    # self.stop()
+                    self.move(0.08, self.whereTo(localTarget[0]))
+                cv2.circle(
+                    self.cvImage, (localTarget[0], localTarget[1]), 10, (0, 255, 0), 2, 2)
+                cv2.imshow("Terminator Vision", self.cvImage)
+                cv2.waitKey(1)
+            except:
+                self.counter += 1
+                print("contador: ", self.counter)
         else:
-            # self.stop()
-            self.move(0.08, self.whereTo(localTarget[0]))
-        
-        cv2.circle(self.cvImage, (localTarget[0], localTarget[1]), 10, (0, 255, 0), 2, 2)
-        cv2.imshow("Terminator Vision", self.cvImage)
-        cv2.waitKey(1)
- 
+            print("Deu certo")
+            self.task['percorrerPista'] = False
+            self.task['procurarPista'] = True
+            self.counter = 0
+
     def whereTo(self, x):
         if x > self.visionWidth/2:
             # corrigir para a esquerda
@@ -162,7 +179,8 @@ class Terminator():
             return 0.05
 
     def procurarCreeper(self, distancia):
-        deteccoes = self.identifica_cor()
+        corRgb = [0,99,7]
+        deteccoes = self.identifica_cor(corRgb)
 
         print("Distancia:", aux.distancia)
         if len(self.media) != 0 and len(self.centro) != 0:
@@ -185,6 +203,7 @@ class Terminator():
                 self.move(0.05, 0)
 
     def alcancarCreeper(self):
+        pass
         # if aux.distancia < 1.02:
         #     velocidade = Twist(Vector3(-0.1, 0, 0), Vector3(0, 0, 0))
         #     self.velocidadeSaida.publish(velocidade)
@@ -278,9 +297,10 @@ class Terminator():
                 self.visionHeight = self.cvImage.shape[0]
                 print("(Terminator.visionWidth, Terminator.visionHeight): ({0},{1})".format(
                     self.visionWidth, self.visionHeight))
-                
+
             # aux.cross(self.cvImage, self.visionWidth/2, self.visionHeight/2)
-            aux.drawHUD(self.cvImage, self.visionWidth/2, self.visionHeight/2, self.tolerance)
+            aux.drawHUD(self.cvImage, self.visionWidth/2,
+                        self.visionHeight/2, self.tolerance)
             depois = time.clock()
 
         except CvBridgeError as e:
@@ -290,7 +310,7 @@ class Terminator():
         """
         Manipulação necessária e suficiente para: `seguir a pista`;\n
         ATENÇÃO: esse método não localiza a pista se estiver fora dela.\n
-        Se quiser localizar a pista, use `pathFinder`; 
+        Se quiser localizar a pista, use `pathFinder`;
         """
         # Vamos chamar de frame só pra manter o costume;
         frame = self.cvImage
@@ -378,7 +398,6 @@ class Terminator():
         Y = int(self.visionHeight/2)
         # print("(X,Y) =",(X,Y)) # descomente essa linha para printar no terminal
         # as coordenadas do centro
-        
 
         return X, Y
 
@@ -387,10 +406,9 @@ class Terminator():
          centro e alinha com a faixa pontilhada central (eu espero);"""
         pass
 
-    def identifica_cor(self):
-    '''
-        Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV).
-        '''
+    def identifica_cor(self,colorRgb):
+        """Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV).
+        Recebe colorRgb, uma lista de cores em RGB, [R,G,B]. Ex.:[0,99,7]"""
 
         # No OpenCV, o canal H vai de 0 até 179, logo cores similares ao
         # vermelho puro (H=0) estão entre H=-8 e H=8.
@@ -398,7 +416,7 @@ class Terminator():
         # do vermelho:
         frame_hsv = cv2.cvtColor(self.cvImage, cv2.COLOR_BGR2HSV)
 
-        cor_menor,cor_maior = aux.ranges([0,99,7]) # devolve dois valores: hsv_menor e hsv_maior
+        cor_menor,cor_maior = aux.ranges(colorRgb) # devolve dois valores: hsv_menor e hsv_maior
         segmentado_cor = cv2.inRange(frame_hsv, cor_menor, cor_maior)
     
         # Note que a notacão do numpy encara as imagens como matriz, portanto o enderecamento é
