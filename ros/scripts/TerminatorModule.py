@@ -52,6 +52,8 @@ class Terminator():
     def __init__(self):
         # todos os atributos podem se autoconstruir a
         # partir de valores default
+        self.c = 0
+        self.counterLimit = 5
         self.results = []
         self.velocidadeSaida = None
         self.target = None
@@ -112,7 +114,7 @@ class Terminator():
                 self.percorrerPista()
             # Tasks relacionados ao Creeper
             if self.task['procurarCreeper']:
-                self.procurarCreeper(self.distancia)
+                self.procurarCreeper()
             elif self.task['alcancarCreeper']:
                 self.alcancarCreeper()
             elif self.task['pegarCreeper']:
@@ -132,8 +134,8 @@ class Terminator():
     def iniciar(self):
         self.task['iniciar'] = False
         self.task['procurarPista'] = False
-        self.task['procurarCreeper'] = False
-        self.task['procurarEstacao'] = True
+        self.task['procurarCreeper'] = True
+        self.task['percorrerPista'] = True
 
     def procurarPista(self):
         colorSpeedwayBorder =[255, 255, 0]
@@ -198,40 +200,36 @@ class Terminator():
             # corrigir para a direita
             return 0.05
 
-    def procurarCreeper(self, distancia):
-        corRgb = [0,99,7]
-        deteccoes = self.identifica_cor(corRgb)
-
-        print("Distancia:", aux.distancia)
-        if len(self.media) != 0 and len(self.centro) != 0:
-            print("Média dos verdes: {0}, {1}".format(self.media[0], self.media[1]))
-            print("Centro dos verdes: {0}, {1}".format(self.centro[0], self.centro[1]))
-           
-            # while not detected:
-            if (self.media[0] > self.centro[0]): #if (media[0] > centro[0] - 5): 
-                # vel = Twist(Vector3(0,0,0), Vector3(0,0,-0.1))
-                self.move(0, -0.1)
-            elif (media[0] < centro[0]): #if (media[0] > centro[0] + 5)
-                # vel = Twist(Vector3(0,0,0), Vector3(0,0,0.1))
-                self.move(0, 0.1)
-
-            if (aux.distancia < .35):
-                # vel = Twist(Vector3(-0.05,0,0), Vector3(0,0,0))
-                self.move(-0.05, 0)
-            else: 
-                # vel = Twist(Vector3(0.05,0,0), Vector3(0,0,0))
-                self.move(0.05, 0)
+    def procurarCreeper(self):
+        cor_creeper = [20, 145, 253]
+        if self.counter < self.counterLimit:
+            try:
+                self.identifica_cor(cor_creeper)
+                print("achou creeper azul \o/")
+                if self.media[1] < self.yFindOutSpeedway:
+                    if self.targetInCenter(self.media) and not self.rotationMode:
+                        self.move(0.5, 0)
+                    else:
+                        self.move(0.03, self.whereTo(self.media[0]))
+                else:
+                    self.rotationMode = True
+                    if self.targetInCenter(self.media):
+                        self.stop()
+                        self.counter += 1
+                    else:
+                        self.move(0.0, self.whereTo(self.media[0]))
+                        self.counter = 0
+            except:
+                pass
+        else:
+            print("mudando de estado")
+            self.task['procurarCreeper'] = False
+            self.task['percorrerPista'] = True
+            self.counter = 0
 
     def alcancarCreeper(self):
+        
         pass
-        # if aux.distancia < 1.02:
-        #     velocidade = Twist(Vector3(-0.1, 0, 0), Vector3(0, 0, 0))
-        #     self.velocidadeSaida.publish(velocidade)
-        #     rospy.sleep(2)
-        # else:
-        #     velocidade = Twist(Vector3(0.1, 0, 0), Vector3(0, 0, 0))
-        #     self.velocidadeSaida.publish(velocidade)
-        #     rospy.sleep(2)
 
     def pegarCreeper(self):
         pass
@@ -424,9 +422,10 @@ class Terminator():
          centro e alinha com a faixa pontilhada central (eu espero);"""
         pass
 
-    def identifica_cor(self,colorRgb):
-        """Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV).
-        Recebe colorRgb, uma lista de cores em RGB, [R,G,B]. Ex.:[0,99,7]"""
+    def identifica_cor(self, colorRgb):
+        '''
+        Segmenta o maior objeto cuja cor é parecida com cor_h (HUE da cor, no espaço HSV).
+        '''
 
         # No OpenCV, o canal H vai de 0 até 179, logo cores similares ao
         # vermelho puro (H=0) estão entre H=-8 e H=8.
@@ -488,6 +487,3 @@ class Terminator():
 
     def scanTarget(self, dataScan):
         self.distancia = np.array(dataScan.ranges).round(decimals=2)[0]
-
-
-    
