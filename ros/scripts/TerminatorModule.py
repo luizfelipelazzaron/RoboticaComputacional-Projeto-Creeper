@@ -25,6 +25,7 @@ from ar_track_alvar_msgs.msg import AlvarMarker, AlvarMarkers
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image
 from std_msgs.msg import Header
+from sensor_msgs.msg import Image, LaserScan
 from numpy import linalg
 from tf import transformations
 from tf import TransformerROS
@@ -61,9 +62,10 @@ class Terminator():
         self.image = None
         self.counter = 0
         self.counterLimit = 5
-        self.distancia = []
+        self.distancia = None
         self.yFindOutSpeedway = 400
         self.rotationMode = False
+        self.dataScan = None
         # retirados de base_proj.py
         self.cvImage = None
         self.visionHeight = None
@@ -244,18 +246,18 @@ class Terminator():
     def soltarCreeper(self):
         pass
 
-    def procurarEstacao(self):
-        if self.targetInCenter([result[2], result[3]]):
-            print("target centralized:", result[0])
-            self.target = "cat"
-            self.stop()
-        else:
-            self.move(0, -0.1)
-            self.target = None
-            if self.target == "cat":
-                self.move(1, 0)
-            else:
-                pass
+    # def procurarEstacao(self):
+    #     if self.targetInCenter([result[2], result[3]]):
+    #         print("target centralized:", result[0])
+    #         self.target = "cat"
+    #         self.stop()
+    #     else:
+    #         self.move(0, -0.1)
+    #         self.target = None
+    #         if self.target == "cat":
+    #             self.move(1, 0)
+    #         else:
+    #             pass
 
     def targetInCenter(self, targetPosition):
         """targetPosition é da forma (x,y)"""
@@ -483,4 +485,5 @@ class Terminator():
         self.centro = centro
 
 
-    
+    def scanTarget(self, dataScan):
+        self.distancia = np.array(dataScan.ranges).round(decimals=2)[0]
