@@ -59,6 +59,8 @@ class Terminator():
         self.tolerance = 20
         self.estacao = None
         self.image = None
+        self.counter = 0
+        self.counterLimit = 5
         # retirados de base_proj.py
         self.cvImage = None
         self.visionHeight = None
@@ -127,14 +129,19 @@ class Terminator():
     def iniciar(self):
         self.task['iniciar'] = False
         self.task['percorrerPista'] = True
+        self.task['procurarCreeper'] = True
 
     def procurarPista(self):
-        # Moveria para frente
-        # Se ele identificar algum obstáculo , ele começa a rotacionar
-        # Se ele identificar a pista, e encerra a task
-        # self.move(0.1, 0)
-
-        pass
+        if self.counter < self.counterLimit:
+            frame = self.cvImage
+            frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            cor_menor, cor_maior = aux.ranges([62, 100, 100])  # amarelo
+            centro = (frame.shape[1]//2, frame.shape[0]//2)
+        else:
+            print("mudando de estado")
+            self.task['procurarPista'] = False
+            self.task['percorrerPista'] = True
+            self.counter = 0
 
     def alcancarPista(self):
         pass
@@ -146,13 +153,11 @@ class Terminator():
             print("linha reta")
             self.move(0.5, 0)
         else:
-            # self.stop()
-            self.move(0.08, self.whereTo(localTarget[0]))
-        
-        cv2.circle(self.cvImage, (localTarget[0], localTarget[1]), 10, (0, 255, 0), 2, 2)
-        cv2.imshow("Terminator Vision", self.cvImage)
-        cv2.waitKey(1)
- 
+            print("Deu certo")
+            self.task['percorrerPista'] = False
+            self.task['procurarPista'] = True
+            self.counter = 0
+
     def whereTo(self, x):
         if x > self.visionWidth/2:
             # corrigir para a esquerda
@@ -183,6 +188,7 @@ class Terminator():
             self.c = 0
 
     def alcancarCreeper(self):
+        pass
         # if aux.distancia < 1.02:
         #     velocidade = Twist(Vector3(-0.1, 0, 0), Vector3(0, 0, 0))
         #     self.velocidadeSaida.publish(velocidade)
@@ -191,7 +197,7 @@ class Terminator():
         #     velocidade = Twist(Vector3(0.1, 0, 0), Vector3(0, 0, 0))
         #     self.velocidadeSaida.publish(velocidade)
         #     rospy.sleep(2)
-        pass
+
     def pegarCreeper(self):
         pass
 
@@ -276,9 +282,10 @@ class Terminator():
                 self.visionHeight = self.cvImage.shape[0]
                 print("(Terminator.visionWidth, Terminator.visionHeight): ({0},{1})".format(
                     self.visionWidth, self.visionHeight))
-                
+
             # aux.cross(self.cvImage, self.visionWidth/2, self.visionHeight/2)
-            aux.drawHUD(self.cvImage, self.visionWidth/2, self.visionHeight/2, self.tolerance)
+            aux.drawHUD(self.cvImage, self.visionWidth/2,
+                        self.visionHeight/2, self.tolerance)
             depois = time.clock()
 
         except CvBridgeError as e:
@@ -288,7 +295,7 @@ class Terminator():
         """
         Manipulação necessária e suficiente para: `seguir a pista`;\n
         ATENÇÃO: esse método não localiza a pista se estiver fora dela.\n
-        Se quiser localizar a pista, use `pathFinder`; 
+        Se quiser localizar a pista, use `pathFinder`;
         """
         # Vamos chamar de frame só pra manter o costume;
         frame = self.cvImage
@@ -376,7 +383,6 @@ class Terminator():
         Y = int(self.visionHeight/2)
         # print("(X,Y) =",(X,Y)) # descomente essa linha para printar no terminal
         # as coordenadas do centro
-        
 
         return X, Y
 
