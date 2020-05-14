@@ -35,9 +35,11 @@ from TerminatorModule import Terminator
 
 import visao_module
 
-# comando para ligar o mundo virtual (pista estreita): roslaunch my_simulation proj1_base_estreita.launch
-# comando para ligar o mundo virtual (pista longa): roslaunch my_simulation proj1.launch
+# comando para ligar o mundo virtual (pista estreita): roslaunch my_simulation proj1_mult_estreita.launch
+# comando para ligar o mundo virtual (pista longa): roslaunch my_simulation proj1_mult.launch
 # comando para abrir a câmera do robô: rqt_image_view
+# comando para abrir a garra: roslaunch turtlebot3_manipulation_moveit_config move_group.launch
+# comando para rviz: roslaunch my_simulation rviz.launch
 # comando para rodar esse controlador: rosrun ros base_proj.py
 # módulo de controle da garra: roslaunch turtlebot3_manipulation_moveit_config move_group.launch
 # GUI de interação com a garra: roslaunch turtlebot3_manipulation_gui turtlebot3_manipulation_gui.launch

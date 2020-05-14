@@ -130,11 +130,10 @@ class Terminator():
         self.task['procurarCreeper'] = True
 
     def procurarPista(self):
+        colorSpeedwayBorder =[62, 100, 100]
         if self.counter < self.counterLimit:
-            frame = self.cvImage
-            frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            cor_menor, cor_maior = aux.ranges([62, 100, 100])  # amarelo
-            centro = (frame.shape[1]//2, frame.shape[0]//2)
+            self.detecctions = self.identifica_cor(colorSpeedwayBorder)
+            print(self.detecctions)
         else:
             print("mudando de estado")
             self.task['procurarPista'] = False
