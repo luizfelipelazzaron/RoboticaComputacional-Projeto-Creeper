@@ -21,14 +21,14 @@ def to_1px(tpl):
 
 
 def to_hsv(value):
-    # função que recebe value no formato [R,G,B]
+    """função que recebe value no formato [R,G,B]"""
     tpl = (value[0], value[1], value[2])
     hsv = cv2.cvtColor(to_1px(value), cv2.COLOR_RGB2HSV)
     return hsv[0][0]
 
 
 def ranges(value):
-    # value = [R,G,B]
+    """value = [R,G,B]"""
     hsv = to_hsv(value)
     hsv2 = np.copy(hsv)
     hsv[0] = max(0, hsv[0]-10)
@@ -79,8 +79,9 @@ def coefficients(array):
 
 
 def cross(img, x, y):
-    # x = int(x)
-    # y = int(y)
+    """cross(img, x, y) recebe uma imagem (array do OpenCv),um x (float) e y(float)"""
+    x = int(x)
+    y = int(y)
     cv2.line(img, (x-10, y), (x+10, y), (255,32,255), 2)
     cv2.line(img, (x, y-10), (x, y+10), (255, 32, 255), 2)
 
