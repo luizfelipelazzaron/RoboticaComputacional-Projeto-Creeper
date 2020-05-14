@@ -134,8 +134,14 @@ class Terminator():
     def iniciar(self):
         self.task['iniciar'] = False
         self.task['procurarPista'] = False
+<<<<<<< HEAD
+        self.task['procurarCreeper'] = False
+        self.task['percorrerPista'] = True
+        self.task['procurarEstacao'] = True
+=======
         self.task['procurarCreeper'] = True
         self.task['percorrerPista'] = True
+>>>>>>> b3fd4321f9610dababcf3101f941e1de22b72139
 
     def procurarPista(self):
         colorSpeedwayBorder =[255, 255, 0]
@@ -238,6 +244,7 @@ class Terminator():
         pass
 
     def procurarEstacao(self):
+        print(self.distancia)
         pass
 
     def alcancarEstacao(self):
@@ -287,8 +294,6 @@ class Terminator():
             # Terminamos
             print("id: {}".format(self.id))
 
-    def identificaEstacao(self, imagem):
-        pass
 
     def processImage(self, image):
         """Responsável por receber a imagem da câmera do robô;\n
@@ -486,4 +491,29 @@ class Terminator():
 
 
     def scanTarget(self, dataScan):
+<<<<<<< HEAD
         self.distancia = np.array(dataScan.ranges).round(decimals=2)[0]
+
+    def dectect(self,image):
+         blob = cv2.dnn.blobFromImage(cv2.resize(self.image, (300, 300)), 0.007843, (300, 300), 127.5)
+         net.setInput(blob)
+         detections = net.forward()
+         for i in np.arange(0, detections.shape[2]):
+             confidence = detections[0, 0, i, 2]
+             if confidence > CONFIDENCE:
+                 idx = int(detections[0, 0, i, 1])
+                 box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+                 (startX, startY, endX, endY) = box.astype("int")
+                 label = "{}: {:.2f}%".format(CLASSES[idx], confidence * 100)
+                 print("[INFO] {}".format(label))
+                 cv2.rectangle(self.image, (startX, startY),(endX, endY), COLORS[idx], 2)
+                 y = startY - 15 if startY - 15 > 15 else startY + 15
+                 cv2.putText(self.image, label, (startX, y),cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
+
+                 self.results.append((CLASSES[idx], confidence *100, (startX, startY), (endX, endY)))
+
+
+    
+=======
+        self.distancia = np.array(dataScan.ranges).round(decimals=2)[0]
+>>>>>>> b3fd4321f9610dababcf3101f941e1de22b72139
