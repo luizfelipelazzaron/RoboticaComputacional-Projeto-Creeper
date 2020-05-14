@@ -203,7 +203,7 @@ class Terminator():
         if self.counter < self.counterLimit:
             try:
                 self.identifica_cor(cor_creeper)
-                print("achou creeper")
+                print("achou creeper azul \o/")
                 if self.media[1] < self.yFindOutSpeedway:
                     if self.targetInCenter(self.media) and not self.rotationMode:
                         self.move(0.5, 0)
@@ -226,6 +226,7 @@ class Terminator():
             self.counter = 0
 
     def alcancarCreeper(self):
+        
         pass
 
     def pegarCreeper(self):
