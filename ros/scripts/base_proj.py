@@ -19,7 +19,7 @@ import tf2_ros
 from geometry_msgs.msg import Twist, Vector3, Pose, Vector3Stamped
 from ar_track_alvar_msgs.msg import AlvarMarker, AlvarMarkers
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, LaserScan
 from std_msgs.msg import Header
 from numpy import linalg
 from tf import transformations
@@ -35,17 +35,15 @@ from TerminatorModule import Terminator
 
 import visao_module
 
-# comando para ligar o mundo virtual: roslaunch my_simulation proj1_base_estreita.launch
+# comando para ligar o mundo virtual (pista estreita): roslaunch my_simulation proj1_base_estreita.launch
+# comando para ligar o mundo virtual (pista longa): roslaunch my_simulation proj1.launch
 # comando para abrir a câmera do robô: rqt_image_view
 # comando para rodar esse controlador: rosrun ros base_proj.py
 # módulo de controle da garra: roslaunch turtlebot3_manipulation_moveit_config move_group.launch
 # GUI de interação com a garra: roslaunch turtlebot3_manipulation_gui turtlebot3_manipulation_gui.launch
 
-
 cv_image = None
 atraso = 1.5E9  # 1 segundo e meio. Em nanossegundos
-
-
 
 # A função a seguir é chamada sempre que chega um novo frame
 
