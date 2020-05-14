@@ -62,7 +62,8 @@ class Terminator():
         self.counter = 0
         self.counterLimit = 5
         self.distancia = []
-        self.yFindOutSpeedway = 420
+        self.yFindOutSpeedway = 400
+        self.rotationMode = False
         # retirados de base_proj.py
         self.cvImage = None
         self.visionHeight = None
@@ -130,8 +131,9 @@ class Terminator():
 
     def iniciar(self):
         self.task['iniciar'] = False
-        self.task['procurarPista'] = True
-        self.task['procurarCreeper'] = False
+        self.task['procurarPista'] = False
+        self.task['procurarCreeper'] = True
+        self.task['percorrerPista'] = True
 
     def procurarPista(self):
         colorSpeedwayBorder =[255, 255, 0]
@@ -139,10 +141,19 @@ class Terminator():
             try:
                 self.identifica_cor(colorSpeedwayBorder)
                 print("y: ",self.media[1])
-                if self.targetInCenter(self.media):
-                    self.move(0.5, 0)
+                if self.media[1] < self.yFindOutSpeedway:
+                    if self.targetInCenter(self.media) and not self.rotationMode:
+                        self.move(0.5, 0)
+                    else:
+                        self.move(0.03, self.whereTo(self.media[0]))
                 else:
-                    self.move(0.03, self.whereTo(self.media[0]))
+                    self.rotationMode = True
+                    if self.targetInCenter(self.media):
+                        self.stop()
+                        self.counter += 1
+                    else:
+                        self.move(0.0, self.whereTo(self.media[0]))
+                        self.counter = 0
             except:
                 pass
         else:
@@ -155,11 +166,22 @@ class Terminator():
         pass
 
     def percorrerPista(self):
-        localTarget = self.followPath()
+        if self.counter < self.counterLimit:
+            try:
+                localTarget = self.followPath()
 
-        if self.targetInCenter(localTarget):
-            print("linha reta")
-            self.move(0.5, 0)
+                if self.targetInCenter(localTarget):
+                    print("linha reta")
+                    self.move(0.5, 0)
+                else:
+                    # self.stop()
+                    self.move(0.08, self.whereTo(localTarget[0]))
+                cv2.circle(self.cvImage, (localTarget[0], localTarget[1]), 10, (0, 255, 0), 2, 2)
+                cv2.imshow("Terminator Vision", self.cvImage)
+                cv2.waitKey(1)
+            except:
+                self.counter += 1
+                print("contador: ", self.counter)
         else:
             print("Deu certo")
             self.task['percorrerPista'] = False
@@ -178,33 +200,33 @@ class Terminator():
 
     def procurarCreeper(self):
         cor_creeper = [20, 145, 253]
-        if self.c < self.counterLimit:
+        if self.counter < self.counterLimit:
             try:
                 self.identifica_cor(cor_creeper)
-                print(self.media)
-                print("Achei o creeper azul!")
-                if self.targetInCenter(self.media):
-                    self.move(0.5, 0)
+                print("achou creeper")
+                if self.media[1] < self.yFindOutSpeedway:
+                    if self.targetInCenter(self.media) and not self.rotationMode:
+                        self.move(0.5, 0)
+                    else:
+                        self.move(0.03, self.whereTo(self.media[0]))
                 else:
-                    self.move(0.08, self.whereTo(self.media[0]))
+                    self.rotationMode = True
+                    if self.targetInCenter(self.media):
+                        self.stop()
+                        self.counter += 1
+                    else:
+                        self.move(0.0, self.whereTo(self.media[0]))
+                        self.counter = 0
             except:
                 pass
         else:
-            print("mudança de estado")
+            print("mudando de estado")
             self.task['procurarCreeper'] = False
             self.task['percorrerPista'] = True
-            self.c = 0
+            self.counter = 0
 
     def alcancarCreeper(self):
         pass
-        # if aux.distancia < 1.02:
-        #     velocidade = Twist(Vector3(-0.1, 0, 0), Vector3(0, 0, 0))
-        #     self.velocidadeSaida.publish(velocidade)
-        #     rospy.sleep(2)
-        # else:
-        #     velocidade = Twist(Vector3(0.1, 0, 0), Vector3(0, 0, 0))
-        #     self.velocidadeSaida.publish(velocidade)
-        #     rospy.sleep(2)
 
     def pegarCreeper(self):
         pass
