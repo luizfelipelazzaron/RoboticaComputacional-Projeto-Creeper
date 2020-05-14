@@ -61,6 +61,8 @@ class Terminator():
         self.image = None
         self.counter = 0
         self.counterLimit = 5
+        self.distancia = []
+        self.yFindOutSpeedway = 420
         # retirados de base_proj.py
         self.cvImage = None
         self.visionHeight = None
@@ -128,15 +130,21 @@ class Terminator():
 
     def iniciar(self):
         self.task['iniciar'] = False
-        self.task['percorrerPista'] = True
-        self.task['procurarCreeper'] = True
+        self.task['procurarPista'] = True
+        self.task['procurarCreeper'] = False
 
     def procurarPista(self):
+        colorSpeedwayBorder =[255, 255, 0]
         if self.counter < self.counterLimit:
-            frame = self.cvImage
-            frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            cor_menor, cor_maior = aux.ranges([62, 100, 100])  # amarelo
-            centro = (frame.shape[1]//2, frame.shape[0]//2)
+            try:
+                self.identifica_cor(colorSpeedwayBorder)
+                print("y: ",self.media[1])
+                if self.targetInCenter(self.media):
+                    self.move(0.5, 0)
+                else:
+                    self.move(0.03, self.whereTo(self.media[0]))
+            except:
+                pass
         else:
             print("mudando de estado")
             self.task['procurarPista'] = False
@@ -227,9 +235,7 @@ class Terminator():
                 pass
 
     def targetInCenter(self, targetPosition):
-        # targetPosition é da forma (x,y)
-        # targetPosition[0] = canto superior esquerdo
-        # targetPosition[1] = canto inferior direito
+        """targetPosition é da forma (x,y)"""
         xTargetCenter = targetPosition[0]
         xTerminatorCenter = self.visionWidth/2
         return abs(xTargetCenter-xTerminatorCenter) <= self.tolerance
@@ -400,6 +406,7 @@ class Terminator():
         # vermelho puro (H=0) estão entre H=-8 e H=8.
         # Precisamos dividir o inRange em duas partes para fazer a detecção
         # do vermelho:
+        frame = self.cvImage
         frame_hsv = cv2.cvtColor(self.cvImage, cv2.COLOR_BGR2HSV)
 
         cor_menor,cor_maior = aux.ranges(colorRgb) # devolve dois valores: hsv_menor e hsv_maior
@@ -435,7 +442,7 @@ class Terminator():
             media = maior_contorno.mean(axis=0)
             media = media.astype(np.int32)
             cv2.circle(frame, (media[0], media[1]), 5, [0, 255, 0])
-            cross(frame, centro, [255,0,0], 1, 17)
+            aux.cross(frame, centro[0], centro[1])
         else:
             media = (0, 0)
 
