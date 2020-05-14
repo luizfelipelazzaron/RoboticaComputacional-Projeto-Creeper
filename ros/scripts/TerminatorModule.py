@@ -60,7 +60,8 @@ class Terminator():
         self.counter = 0
         self.counterLimit = 5
         self.distancia = []
-        self.yFindOutSpeedway = 470
+        self.yFindOutSpeedway = 400
+        self.rotationMode = False
         # retirados de base_proj.py
         self.cvImage = None
         self.visionHeight = None
@@ -137,10 +138,19 @@ class Terminator():
             try:
                 self.identifica_cor(colorSpeedwayBorder)
                 print("y: ",self.media[1])
-                if self.targetInCenter(self.media):
-                    self.move(0.5, 0)
+                if self.media[1] < self.yFindOutSpeedway:
+                    if self.targetInCenter(self.media) and not self.rotationMode:
+                        self.move(0.5, 0)
+                    else:
+                        self.move(0.03, self.whereTo(self.media[0]))
                 else:
-                    self.move(0.03, self.whereTo(self.media[0]))
+                    self.rotationMode = True
+                    if self.targetInCenter(self.media):
+                        self.stop()
+                        self.counter += 1
+                    else:
+                        self.move(0.0, self.whereTo(self.media[0]))
+                        self.counter = 0
             except:
                 pass
         else:
