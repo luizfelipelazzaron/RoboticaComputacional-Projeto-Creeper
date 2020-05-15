@@ -114,7 +114,7 @@ class Terminator():
                 self.percorrerPista()
             # Tasks relacionados ao Creeper
             if self.task['procurarCreeper']:
-                self.procurarCreeper()
+                self.procurarCreeper()          
             elif self.task['alcancarCreeper']:
                 self.alcancarCreeper()
             elif self.task['pegarCreeper']:
@@ -208,7 +208,7 @@ class Terminator():
                 print("achou creeper azul \o/")
                 if self.media[1] < self.yFindOutSpeedway:
                     if self.targetInCenter(self.media) and not self.rotationMode:
-                        self.move(0.5, 0)
+                        self.move(0, 0)
                     else:
                         self.move(0.03, self.whereTo(self.media[0]))
                 else:
@@ -228,8 +228,22 @@ class Terminator():
             self.counter = 0
 
     def alcancarCreeper(self):
-        
-        pass
+        cor_creeper = [20, 145, 253]
+        if self.task['procurarCreeper'] == True:
+            print("area creeper azul = ", self.area)
+            try:
+                self.identifica_cor(cor_creeper)
+                if self.area > 2500:
+                    self.move(0.1, 0)
+                else:
+                    self.task['alcancarCreeper'] = False
+                    self.task['percorrerPista'] =  True
+            except:
+                pass
+        else:
+            print("mudando de estado")
+            self.task['alcancarCreeper'] = False
+            self.task['percorrerPista'] = True
 
     def pegarCreeper(self):
         pass
@@ -483,6 +497,7 @@ class Terminator():
         # self.maior_contorno_area = maior_contorno_area
         self.media = media
         self.centro = centro
+        self.area = area
 
 
     def scanTarget(self, dataScan):
