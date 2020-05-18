@@ -38,6 +38,8 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Header
 import auxiliar as aux
 import visao_module
+import rospkg
+import os
 
 width = "screen width"
 height = "screen height"
@@ -83,6 +85,13 @@ class Terminator():
         self.tfl = 0
         self.tfBuffer = tf2_ros.Buffer()
         self.bridge = CvBridge()
+
+       
+
+        
+
+
+        
 
         self.task = {'iniciar': True,               # o robô inicia sua atividade
                      'procurarPista': False,        # o robô procura visualmente a pista
@@ -134,14 +143,9 @@ class Terminator():
     def iniciar(self):
         self.task['iniciar'] = False
         self.task['procurarPista'] = False
-<<<<<<< HEAD
         self.task['procurarCreeper'] = False
-        self.task['percorrerPista'] = True
+        self.task['percorrerPista'] = False
         self.task['procurarEstacao'] = True
-=======
-        self.task['procurarCreeper'] = True
-        self.task['percorrerPista'] = True
->>>>>>> b3fd4321f9610dababcf3101f941e1de22b72139
 
     def procurarPista(self):
         colorSpeedwayBorder =[255, 255, 0]
@@ -244,8 +248,9 @@ class Terminator():
         pass
 
     def procurarEstacao(self):
-        print(self.distancia)
-        pass
+        resultados, imagem = self.identificaObjetos()
+        print(resultados)
+
 
     def alcancarEstacao(self):
         pass
@@ -491,29 +496,40 @@ class Terminator():
 
 
     def scanTarget(self, dataScan):
-<<<<<<< HEAD
         self.distancia = np.array(dataScan.ranges).round(decimals=2)[0]
 
-    def dectect(self,image):
-         blob = cv2.dnn.blobFromImage(cv2.resize(self.image, (300, 300)), 0.007843, (300, 300), 127.5)
-         net.setInput(blob)
-         detections = net.forward()
-         for i in np.arange(0, detections.shape[2]):
-             confidence = detections[0, 0, i, 2]
-             if confidence > CONFIDENCE:
-                 idx = int(detections[0, 0, i, 1])
-                 box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-                 (startX, startY, endX, endY) = box.astype("int")
-                 label = "{}: {:.2f}%".format(CLASSES[idx], confidence * 100)
-                 print("[INFO] {}".format(label))
-                 cv2.rectangle(self.image, (startX, startY),(endX, endY), COLORS[idx], 2)
-                 y = startY - 15 if startY - 15 > 15 else startY + 15
-                 cv2.putText(self.image, label, (startX, y),cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
-
-                 self.results.append((CLASSES[idx], confidence *100, (startX, startY), (endX, endY)))
-
-
-    
-=======
-        self.distancia = np.array(dataScan.ranges).round(decimals=2)[0]
->>>>>>> b3fd4321f9610dababcf3101f941e1de22b72139
+    def identificaObjetos(self):
+        results = []
+        #Encontrando a Rede Neural
+        rospack = rospkg.RosPack()
+        path = rospack.get_path('ros')
+        scripts = os.path.join(path, "scripts")
+        proto = os.path.join(scripts,"MobileNetSSD_deploy.prototxt.txt")
+        model = os.path.join(scripts, "MobileNetSSD_deploy.caffemodel")
+        imagem = self.cvImage
+        blob = cv2.dnn.blobFromImage(cv2.resize(imagem, (300, 300)), 0.007843, (300, 300), 127.5)
+        net = cv2.dnn.readNetFromCaffe(proto,model)                #Intanciação da rede neural
+        CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
+                        "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
+                        "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
+                        "sofa", "train", "tvmonitor"]
+        CONFIDENCE = 0.7
+        COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
+        print("[INFO] computing object detections...")
+        net.setInput(blob)
+        detections = net.forward()
+        (w, h) = imagem.shape[:2]
+        for i in np.arange(0, detections.shape[2]):
+            confidence = detections[0, 0, i, 2]
+            if confidence > CONFIDENCE:
+                idx = int(detections[0, 0, i, 1])
+                box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+                (startX, startY, endX, endY) = box.astype("int")
+                label = "{}: {:.2f}%".format(CLASSES[idx], confidence * 100)
+                print("[INFO] {}".format(label))
+                cv2.rectangle(imagem, (startX, startY),(endX, endY),COLORS[idx], 2)
+                y = startY - 15 if startY - 15 > 15 else startY + 15
+                cv2.putText(imagem, label, (startX, y),cv2.FONT_HERSHEY_SIMPLEX, 0.5,COLORS[idx], 2)
+                self.results.append((CLASSES[idx], confidence *100, (startX, startY), (endX, endY)))
+                cv2.imshow('video',imagem)       
+        return results, imagem
