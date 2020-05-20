@@ -50,11 +50,28 @@ direction = {
     "left": Vector3(0, 0, -1)
 }
 
+#Instanciamento da Rede Neural
+rospack = rospkg.RosPack()
+path = rospack.get_path('ros')
+scripts = os.path.join(path, "scripts")
+proto = os.path.join(scripts,"MobileNetSSD_deploy.prototxt.txt")
+model = os.path.join(scripts, "MobileNetSSD_deploy.caffemodel")
+net = cv2.dnn.readNetFromCaffe(proto,model) 
+CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
+	        "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
+	        "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
+	        "sofa", "train", "tvmonitor"]
+CONFIDENCE = 0.7
+COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
+
+
+
 class Terminator():
     def __init__(self):
         # todos os atributos podem se autoconstruir a
         # partir de valores default
         self.c = 0
+        self.estacaoEscolhida = 'dog'
         self.counterLimit = 5
         self.results = []
         self.velocidadeSaida = None
@@ -85,14 +102,8 @@ class Terminator():
         self.tfl = 0
         self.tfBuffer = tf2_ros.Buffer()
         self.bridge = CvBridge()
-
-       
-
+        self.finalImage = None
         
-
-
-        
-
         self.task = {'iniciar': True,               # o robô inicia sua atividade
                      'procurarPista': False,        # o robô procura visualmente a pista
                      'alcancarPista': False,        # o robô vai em direção a pista
@@ -123,7 +134,7 @@ class Terminator():
                 self.percorrerPista()
             # Tasks relacionados ao Creeper
             if self.task['procurarCreeper']:
-                self.procurarCreeper()
+                self.procurarCreeper()          
             elif self.task['alcancarCreeper']:
                 self.alcancarCreeper()
             elif self.task['pegarCreeper']:
@@ -137,6 +148,7 @@ class Terminator():
                 self.procurarEstacao()
             elif self.task['alcancarEstacao']:
                 self.alcancarEstacao()
+            # self.imShow()
         else:
             pass
 
@@ -181,16 +193,13 @@ class Terminator():
         if self.counter < self.counterLimit:
             try:
                 localTarget = self.followPath()
-
                 if self.targetInCenter(localTarget):
                     print("linha reta")
                     self.move(0.5, 0)
                 else:
                     # self.stop()
-                    self.move(0.08, self.whereTo(localTarget[0]))
-                cv2.circle(self.cvImage, (localTarget[0], localTarget[1]), 10, (0, 255, 0), 2, 2)
-                cv2.imshow("Terminator Vision", self.cvImage)
-                cv2.waitKey(1)
+                    self.move(0.1, self.whereTo(localTarget[0]))
+
             except:
                 self.counter += 1
                 print("contador: ", self.counter)
@@ -218,7 +227,7 @@ class Terminator():
                 print("achou creeper azul \o/")
                 if self.media[1] < self.yFindOutSpeedway:
                     if self.targetInCenter(self.media) and not self.rotationMode:
-                        self.move(0.5, 0)
+                        self.move(0, 0)
                     else:
                         self.move(0.03, self.whereTo(self.media[0]))
                 else:
@@ -238,8 +247,22 @@ class Terminator():
             self.counter = 0
 
     def alcancarCreeper(self):
-        
-        pass
+        cor_creeper = [20, 145, 253]
+        if self.task['procurarCreeper'] == True:
+            print("area creeper azul = ", self.area)
+            try:
+                self.identifica_cor(cor_creeper)
+                if self.area > 2500:
+                    self.move(0.1, 0)
+                else:
+                    self.task['alcancarCreeper'] = False
+                    self.task['percorrerPista'] =  True
+            except:
+                pass
+        else:
+            print("mudando de estado")
+            self.task['alcancarCreeper'] = False
+            self.task['percorrerPista'] = True
 
     def pegarCreeper(self):
         pass
@@ -248,8 +271,23 @@ class Terminator():
         pass
 
     def procurarEstacao(self):
-        resultados, imagem = self.identificaObjetos()
-        print(resultados)
+        if self.counter < self.counterLimit:
+            try:
+                self.move(0,0.1)
+                self.identificaObjetos()
+                estacaoEncontrada = self.results[0][0]
+                if estacaoEncontrada == self.estacaoEscolhida:
+                    self.counter += 1
+                    print("Contador: ", self.counter)
+                else:
+                    self.counter = 0
+            except:
+                pass
+        else:
+            self.counter = 0
+            print("mudando de estado")
+            self.task['procurarEstacao'] = False
+
 
 
     def alcancarEstacao(self):
@@ -270,6 +308,14 @@ class Terminator():
     #             self.move(1, 0)
     #         else:
     #             pass
+
+    def imShow(self):
+        if self.finalImage is not None:
+            thisImage = self.finalImage
+            thisImage = aux.drawHUD(thisImage, self.tolerance)
+            cv2.imshow("Final Image", thisImage)
+            cv2.waitKey(1)
+
 
     def targetInCenter(self, targetPosition):
         """targetPosition é da forma (x,y)"""
@@ -317,6 +363,7 @@ class Terminator():
             # ela foi armazenada em um atributo para que
             # possa ser facilemente manipulada por outros métodos;
             self.cvImage = self.bridge.compressed_imgmsg_to_cv2(image, "bgr8")
+            # self.finalImage = self.cvImage
             if not (self.visionHeight and self.visionWidth):
                 print(self.cvImage.shape)
                 self.visionWidth = self.cvImage.shape[1]
@@ -324,9 +371,7 @@ class Terminator():
                 print("(Terminator.visionWidth, Terminator.visionHeight): ({0},{1})".format(
                     self.visionWidth, self.visionHeight))
 
-            # aux.cross(self.cvImage, self.visionWidth/2, self.visionHeight/2)
-            aux.drawHUD(self.cvImage, self.visionWidth/2,
-                        self.visionHeight/2, self.tolerance)
+            
             depois = time.clock()
 
         except CvBridgeError as e:
@@ -391,18 +436,16 @@ class Terminator():
         # para executar umas operações mais sucintas
         try:
             left = np.array(left)
+            for leftLine in left:
+                aux.draw_line(frame, leftLine, color=(32, 0, 255))
         except:
             return 0, (self.visionHeight/2)
         try:
             right = np.array(right)
+            for rightLine in right:
+                aux.draw_line(frame, rightLine, color=(255, 32, 0))
         except:
             return int(self.visionWidth), (self.visionHeight/2)
-        # print("left:", left.shape)
-        # print("right:", right.shape)
-        # for leftLine in left:
-        #     aux.draw_line(self.cvImage, leftLine, color=(32, 0, 255))
-        # for rightLine in right:
-        #     aux.draw_line(self.cvImage, rightLine, color=(255, 32, 0))
 
         try:
             # reta média esquerda
@@ -424,7 +467,8 @@ class Terminator():
         Y = int(self.visionHeight/2)
         # print("(X,Y) =",(X,Y)) # descomente essa linha para printar no terminal
         # as coordenadas do centro
-
+        cv2.circle(frame, (X, Y), 10, (0, 255, 0), 2, 2)
+        self.finalImage = frame
         return X, Y
 
     def pathFinder(self):
@@ -485,40 +529,21 @@ class Terminator():
         font = cv2.FONT_HERSHEY_COMPLEX_SMALL
         cv2.putText(frame,"{:d} {:d}".format(*media),(20,100), 1, 4,(255,255,255),2,cv2.LINE_AA)
         cv2.putText(frame,"{:0.1f}".format(maior_contorno_area),(20,50), 1, 4,(255,255,255),2,cv2.LINE_AA)
-
-        cv2.imshow('video', frame)
-        cv2.imshow('seg', segmentado_cor)
-        cv2.waitKey(1)
-
         # self.maior_contorno_area = maior_contorno_area
         self.media = media
         self.centro = centro
-
+        self.area = area
 
     def scanTarget(self, dataScan):
         self.distancia = np.array(dataScan.ranges).round(decimals=2)[0]
 
     def identificaObjetos(self):
-        results = []
-        #Encontrando a Rede Neural
-        rospack = rospkg.RosPack()
-        path = rospack.get_path('ros')
-        scripts = os.path.join(path, "scripts")
-        proto = os.path.join(scripts,"MobileNetSSD_deploy.prototxt.txt")
-        model = os.path.join(scripts, "MobileNetSSD_deploy.caffemodel")
         imagem = self.cvImage
         blob = cv2.dnn.blobFromImage(cv2.resize(imagem, (300, 300)), 0.007843, (300, 300), 127.5)
-        net = cv2.dnn.readNetFromCaffe(proto,model)                #Intanciação da rede neural
-        CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
-                        "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
-                        "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
-                        "sofa", "train", "tvmonitor"]
-        CONFIDENCE = 0.7
-        COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
-        print("[INFO] computing object detections...")
+        # print("[INFO] computing object detections...")
         net.setInput(blob)
         detections = net.forward()
-        (w, h) = imagem.shape[:2]
+        (w, h) = (self.visionWidth,self.visionHeight)
         for i in np.arange(0, detections.shape[2]):
             confidence = detections[0, 0, i, 2]
             if confidence > CONFIDENCE:
@@ -526,10 +551,9 @@ class Terminator():
                 box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
                 (startX, startY, endX, endY) = box.astype("int")
                 label = "{}: {:.2f}%".format(CLASSES[idx], confidence * 100)
-                print("[INFO] {}".format(label))
+                # print("[INFO] {}".format(label))
                 cv2.rectangle(imagem, (startX, startY),(endX, endY),COLORS[idx], 2)
                 y = startY - 15 if startY - 15 > 15 else startY + 15
                 cv2.putText(imagem, label, (startX, y),cv2.FONT_HERSHEY_SIMPLEX, 0.5,COLORS[idx], 2)
                 self.results.append((CLASSES[idx], confidence *100, (startX, startY), (endX, endY)))
-                cv2.imshow('video',imagem)       
-        return results, imagem
+        self.finalImage = imagem
