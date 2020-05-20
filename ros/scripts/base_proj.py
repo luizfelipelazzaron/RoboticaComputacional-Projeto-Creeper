@@ -79,6 +79,7 @@ if __name__ == "__main__":
         print("Iniciando")
         while not rospy.is_shutdown():
             t800.estadoAtual()
+            t800.imShow()
             
 
     except rospy.ROSInterruptException:
