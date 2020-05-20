@@ -38,6 +38,8 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Header
 import auxiliar as aux
 import visao_module
+import rospkg
+import os
 
 width = "screen width"
 height = "screen height"
@@ -48,11 +50,28 @@ direction = {
     "left": Vector3(0, 0, -1)
 }
 
+#Instanciamento da Rede Neural
+rospack = rospkg.RosPack()
+path = rospack.get_path('ros')
+scripts = os.path.join(path, "scripts")
+proto = os.path.join(scripts,"MobileNetSSD_deploy.prototxt.txt")
+model = os.path.join(scripts, "MobileNetSSD_deploy.caffemodel")
+net = cv2.dnn.readNetFromCaffe(proto,model) 
+CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
+	        "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
+	        "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
+	        "sofa", "train", "tvmonitor"]
+CONFIDENCE = 0.7
+COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
+
+
+
 class Terminator():
     def __init__(self):
         # todos os atributos podem se autoconstruir a
         # partir de valores default
         self.c = 0
+        self.estacaoEscolhida = 'dog'
         self.counterLimit = 5
         self.results = []
         self.velocidadeSaida = None
@@ -83,9 +102,8 @@ class Terminator():
         self.tfl = 0
         self.tfBuffer = tf2_ros.Buffer()
         self.bridge = CvBridge()
-
         self.finalImage = None
-
+        
         self.task = {'iniciar': True,               # o robô inicia sua atividade
                      'procurarPista': False,        # o robô procura visualmente a pista
                      'alcancarPista': False,        # o robô vai em direção a pista
@@ -137,8 +155,9 @@ class Terminator():
     def iniciar(self):
         self.task['iniciar'] = False
         self.task['procurarPista'] = False
-        # self.task['procurarCreeper'] = True
-        self.task['percorrerPista'] = True
+        self.task['procurarCreeper'] = False
+        self.task['percorrerPista'] = False
+        self.task['procurarEstacao'] = True
 
     def procurarPista(self):
         colorSpeedwayBorder =[255, 255, 0]
@@ -252,8 +271,24 @@ class Terminator():
         pass
 
     def procurarEstacao(self):
-        print(self.distancia)
-        pass
+        if self.counter < self.counterLimit:
+            try:
+                self.move(0,0.1)
+                self.identificaObjetos()
+                estacaoEncontrada = self.results[0][0]
+                if estacaoEncontrada == self.estacaoEscolhida:
+                    self.counter += 1
+                    print("Contador: ", self.counter)
+                else:
+                    self.counter = 0
+            except:
+                pass
+        else:
+            self.counter = 0
+            print("mudando de estado")
+            self.task['procurarEstacao'] = False
+
+
 
     def alcancarEstacao(self):
         pass
@@ -432,7 +467,6 @@ class Terminator():
         Y = int(self.visionHeight/2)
         # print("(X,Y) =",(X,Y)) # descomente essa linha para printar no terminal
         # as coordenadas do centro
-
         cv2.circle(frame, (X, Y), 10, (0, 255, 0), 2, 2)
         self.finalImage = frame
         return X, Y
@@ -495,33 +529,31 @@ class Terminator():
         font = cv2.FONT_HERSHEY_COMPLEX_SMALL
         cv2.putText(frame,"{:d} {:d}".format(*media),(20,100), 1, 4,(255,255,255),2,cv2.LINE_AA)
         cv2.putText(frame,"{:0.1f}".format(maior_contorno_area),(20,50), 1, 4,(255,255,255),2,cv2.LINE_AA)
-
         # self.maior_contorno_area = maior_contorno_area
         self.media = media
         self.centro = centro
         self.area = area
 
-
     def scanTarget(self, dataScan):
         self.distancia = np.array(dataScan.ranges).round(decimals=2)[0]
 
-    def dectect(self,image):
-         blob = cv2.dnn.blobFromImage(cv2.resize(self.image, (300, 300)), 0.007843, (300, 300), 127.5)
-         net.setInput(blob)
-         detections = net.forward()
-         for i in np.arange(0, detections.shape[2]):
-             confidence = detections[0, 0, i, 2]
-             if confidence > CONFIDENCE:
-                 idx = int(detections[0, 0, i, 1])
-                 box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-                 (startX, startY, endX, endY) = box.astype("int")
-                 label = "{}: {:.2f}%".format(CLASSES[idx], confidence * 100)
-                 print("[INFO] {}".format(label))
-                 cv2.rectangle(self.finalImage, (startX, startY),(endX, endY), COLORS[idx], 2)
-                 y = startY - 15 if startY - 15 > 15 else startY + 15
-                 cv2.putText(self.finalImage, label, (startX, y),cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
-
-                 self.results.append((CLASSES[idx], confidence *100, (startX, startY), (endX, endY)))
-
-
-    
+    def identificaObjetos(self):
+        imagem = self.cvImage
+        blob = cv2.dnn.blobFromImage(cv2.resize(imagem, (300, 300)), 0.007843, (300, 300), 127.5)
+        # print("[INFO] computing object detections...")
+        net.setInput(blob)
+        detections = net.forward()
+        (w, h) = (self.visionWidth,self.visionHeight)
+        for i in np.arange(0, detections.shape[2]):
+            confidence = detections[0, 0, i, 2]
+            if confidence > CONFIDENCE:
+                idx = int(detections[0, 0, i, 1])
+                box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+                (startX, startY, endX, endY) = box.astype("int")
+                label = "{}: {:.2f}%".format(CLASSES[idx], confidence * 100)
+                # print("[INFO] {}".format(label))
+                cv2.rectangle(imagem, (startX, startY),(endX, endY),COLORS[idx], 2)
+                y = startY - 15 if startY - 15 > 15 else startY + 15
+                cv2.putText(imagem, label, (startX, y),cv2.FONT_HERSHEY_SIMPLEX, 0.5,COLORS[idx], 2)
+                self.results.append((CLASSES[idx], confidence *100, (startX, startY), (endX, endY)))
+        self.finalImage = imagem
