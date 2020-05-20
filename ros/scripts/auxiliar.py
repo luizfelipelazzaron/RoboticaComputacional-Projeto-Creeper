@@ -84,13 +84,19 @@ def cross(img, x, y):
     y = int(y)
     cv2.line(img, (x-10, y), (x+10, y), (255,32,255), 2)
     cv2.line(img, (x, y-10), (x, y+10), (255, 32, 255), 2)
+    return img
 
 def line(img, x0, y0, x1, y1):
     cv2.line(img, (x0,y0), (x1,y1), (255,32,255), 2)
 
-def drawHUD(img, x, y, tolerance):
-    x = int(x)
-    y = int(y)
-    cross(img,x,y)
-    line(img, x - tolerance, y - 20, x - tolerance, y+20)
-    line(img, x + tolerance, y - 20, x + tolerance, y+20)
+def drawHUD(img, tolerance):
+    """
+    Desenha marcações importantes na tela;
+    """
+    
+    xCentro = int(img.shape[1]/2)
+    yCentro = int(img.shape[0]/2)
+    img = cross(img,xCentro,yCentro)
+    line(img, xCentro - tolerance, yCentro - 20, xCentro - tolerance, yCentro+20)
+    line(img, xCentro + tolerance, yCentro - 20, xCentro + tolerance, yCentro+20)
+    return img
