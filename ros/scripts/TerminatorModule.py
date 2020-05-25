@@ -148,7 +148,6 @@ class Terminator():
                 self.procurarEstacao()
             elif self.task['alcancarEstacao']:
                 self.alcancarEstacao()
-            # self.imShow()
         else:
             pass
 
@@ -296,26 +295,12 @@ class Terminator():
     def soltarCreeper(self):
         pass
 
-    # def procurarEstacao(self):
-    #     if self.targetInCenter([result[2], result[3]]):
-    #         print("target centralized:", result[0])
-    #         self.target = "cat"
-    #         self.stop()
-    #     else:
-    #         self.move(0, -0.1)
-    #         self.target = None
-    #         if self.target == "cat":
-    #             self.move(1, 0)
-    #         else:
-    #             pass
-
     def imShow(self):
         if self.finalImage is not None:
             thisImage = self.finalImage
             thisImage = aux.drawHUD(thisImage, self.tolerance)
             cv2.imshow("Final Image", thisImage)
             cv2.waitKey(1)
-
 
     def targetInCenter(self, targetPosition):
         """targetPosition é da forma (x,y)"""
@@ -429,52 +414,46 @@ class Terminator():
                 right = list(filter(lambda line: 0.3 <
                                     aux.tangente(line) < 19, lines))
             except:
-                print("caiu no except")
                 pass
         # agora que temos listas de linhas com inclinaçao
         # negativa (esquerda) e positiva (direita), transformamos em array
         # para executar umas operações mais sucintas
-        try:
+        if left:
             left = np.array(left)
             for leftLine in left:
                 aux.draw_line(frame, leftLine, color=(32, 0, 255))
-        except:
-            return 0, (self.visionHeight/2)
-        try:
+        
+        if right:
             right = np.array(right)
             for rightLine in right:
                 aux.draw_line(frame, rightLine, color=(255, 32, 0))
-        except:
-            return int(self.visionWidth), (self.visionHeight/2)
-
+        
+        Y = int(self.visionHeight/2)
         try:
             # reta média esquerda
             m1, n1 = aux.coefficients(left)
-            # print("m1,n1:", m1, n1)
         except:
-            return 0, int(self.visionHeight/2)
+            cv2.circle(frame, (0, int(self.visionHeight/2)), 10, (0, 255, 0), 2, 2)
+            self.finalImage = frame
+            return 0, Y
         try:
             # reta média direita
             m2, n2 = aux.coefficients(right)
-            # print("m2,n2", m2, n2)
         except:
-            return int(self.visionWidth), int(self.visionHeight/2)
+            cv2.circle(frame, (int(self.visionWidth), Y), 10, (0, 255, 0), 2, 2)
+            self.finalImage = frame
+            return int(self.visionWidth), Y
         # min() e max() servem para deixar o circulo sempre visível
         # X e Y são as coordenadas do ponto de encontro entre a reta média azul e a reta média vermelha
         X = max(0, min(int((n2-n1)/(m1-m2)), self.visionWidth))
 
         # Y = max(0, min(int((m1*X + n1)), self.visionHeight))
-        Y = int(self.visionHeight/2)
         # print("(X,Y) =",(X,Y)) # descomente essa linha para printar no terminal
         # as coordenadas do centro
         cv2.circle(frame, (X, Y), 10, (0, 255, 0), 2, 2)
         self.finalImage = frame
         return X, Y
 
-    def pathFinder(self):
-        """Encontra a pista se não estiver nela, se dirige até o
-         centro e alinha com a faixa pontilhada central (eu espero);"""
-        pass
 
     def identifica_cor(self, colorRgb):
         '''
