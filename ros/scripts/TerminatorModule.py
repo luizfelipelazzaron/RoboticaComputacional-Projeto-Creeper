@@ -40,6 +40,7 @@ import auxiliar as aux
 import visao_module
 import rospkg
 import os
+from garra_demo import MoveGroupPythonIntefaceTutorial, all_close
 
 width = "screen width"
 height = "screen height"
@@ -71,6 +72,7 @@ class Terminator():
         # todos os atributos podem se autoconstruir a
         # partir de valores default
         self.c = 0
+        self.corCreeper = [20, 145, 253]
         self.estacaoEscolhida = 'dog'
         self.counterLimit = 5
         self.results = []
@@ -81,7 +83,7 @@ class Terminator():
         self.image = None
         self.counter = 0
         self.counterLimit = 5
-        self.distancia = None
+        self.distancia = 30         #valor grande , isto é, maior que 0.2
         self.yFindOutSpeedway = 400
         self.rotationMode = False
         self.dataScan = None
@@ -148,6 +150,7 @@ class Terminator():
                 self.procurarEstacao()
             elif self.task['alcancarEstacao']:
                 self.alcancarEstacao()
+            # self.imShow()
         else:
             pass
 
@@ -156,7 +159,8 @@ class Terminator():
         self.task['procurarPista'] = False
         self.task['procurarCreeper'] = False
         self.task['percorrerPista'] = False
-        self.task['procurarEstacao'] = True
+        self.task['procurarEstacao'] = False
+        self.task['pegarCreeper'] = True
 
     def procurarPista(self):
         colorSpeedwayBorder =[255, 255, 0]
@@ -219,16 +223,19 @@ class Terminator():
             return 0.05
 
     def procurarCreeper(self):
-        cor_creeper = [20, 145, 253]
         if self.counter < self.counterLimit:
             try:
-                self.identifica_cor(cor_creeper)
-                print("achou creeper azul \o/")
-                if self.media[1] < self.yFindOutSpeedway:
+                self.identifica_cor(self.corCreeper)
+                print("achou creeper \o/")
+                print("distancia: ", self.distancia)
+                if self.distancia < 0.5:
+                    self.stop()
+                    self.counter = self.counterLimit
+                elif self.media[1] < self.yFindOutSpeedway:
                     if self.targetInCenter(self.media) and not self.rotationMode:
-                        self.move(0, 0)
+                        self.move(0.1, 0)
                     else:
-                        self.move(0.03, self.whereTo(self.media[0]))
+                        self.move(0.05, self.whereTo(self.media[0]))
                 else:
                     self.rotationMode = True
                     if self.targetInCenter(self.media):
@@ -242,15 +249,14 @@ class Terminator():
         else:
             print("mudando de estado")
             self.task['procurarCreeper'] = False
-            self.task['percorrerPista'] = True
+            self.task['pegarCreeper'] = True
             self.counter = 0
 
     def alcancarCreeper(self):
-        cor_creeper = [20, 145, 253]
-        if self.task['procurarCreeper'] == True:
+        # if self.task['procurarCreeper'] == True:
             print("area creeper azul = ", self.area)
             try:
-                self.identifica_cor(cor_creeper)
+                self.identifica_cor(self.corCreeper)
                 if self.area > 2500:
                     self.move(0.1, 0)
                 else:
@@ -258,12 +264,15 @@ class Terminator():
                     self.task['percorrerPista'] =  True
             except:
                 pass
-        else:
-            print("mudando de estado")
-            self.task['alcancarCreeper'] = False
-            self.task['percorrerPista'] = True
+        # else:
+        #     print("mudando de estado")
+        #     self.task['alcancarCreeper'] = False
+        #     self.task['percorrerPista'] = True
 
     def pegarCreeper(self):
+        print("Bora aprender a pegar o Creeper então")
+        garra = MoveGroupPythonIntefaceTutorial()
+        garra.open_gripper()
         pass
 
     def carregarCreeper(self):
@@ -272,7 +281,6 @@ class Terminator():
     def procurarEstacao(self):
         if self.counter < self.counterLimit:
             try:
-                self.move(0,0.1)
                 self.identificaObjetos()
                 estacaoEncontrada = self.results[0][0]
                 if estacaoEncontrada == self.estacaoEscolhida:
@@ -287,13 +295,24 @@ class Terminator():
             print("mudando de estado")
             self.task['procurarEstacao'] = False
 
-
-
     def alcancarEstacao(self):
         pass
 
     def soltarCreeper(self):
         pass
+
+    # def procurarEstacao(self):
+    #     if self.targetInCenter([result[2], result[3]]):
+    #         print("target centralized:", result[0])
+    #         self.target = "cat"
+    #         self.stop()
+    #     else:
+    #         self.move(0, -0.1)
+    #         self.target = None
+    #         if self.target == "cat":
+    #             self.move(1, 0)
+    #         else:
+    #             pass
 
     def imShow(self):
         if self.finalImage is not None:
@@ -414,46 +433,52 @@ class Terminator():
                 right = list(filter(lambda line: 0.3 <
                                     aux.tangente(line) < 19, lines))
             except:
+                print("caiu no except")
                 pass
         # agora que temos listas de linhas com inclinaçao
         # negativa (esquerda) e positiva (direita), transformamos em array
         # para executar umas operações mais sucintas
-        if left:
+        try:
             left = np.array(left)
             for leftLine in left:
                 aux.draw_line(frame, leftLine, color=(32, 0, 255))
-        
-        if right:
+        except:
+            return 0, (self.visionHeight/2)
+        try:
             right = np.array(right)
             for rightLine in right:
                 aux.draw_line(frame, rightLine, color=(255, 32, 0))
-        
-        Y = int(self.visionHeight/2)
+        except:
+            return int(self.visionWidth), (self.visionHeight/2)
+
         try:
             # reta média esquerda
             m1, n1 = aux.coefficients(left)
+            # print("m1,n1:", m1, n1)
         except:
-            cv2.circle(frame, (0, int(self.visionHeight/2)), 10, (0, 255, 0), 2, 2)
-            self.finalImage = frame
-            return 0, Y
+            return 0, int(self.visionHeight/2)
         try:
             # reta média direita
             m2, n2 = aux.coefficients(right)
+            # print("m2,n2", m2, n2)
         except:
-            cv2.circle(frame, (int(self.visionWidth), Y), 10, (0, 255, 0), 2, 2)
-            self.finalImage = frame
-            return int(self.visionWidth), Y
+            return int(self.visionWidth), int(self.visionHeight/2)
         # min() e max() servem para deixar o circulo sempre visível
         # X e Y são as coordenadas do ponto de encontro entre a reta média azul e a reta média vermelha
         X = max(0, min(int((n2-n1)/(m1-m2)), self.visionWidth))
 
         # Y = max(0, min(int((m1*X + n1)), self.visionHeight))
+        Y = int(self.visionHeight/2)
         # print("(X,Y) =",(X,Y)) # descomente essa linha para printar no terminal
         # as coordenadas do centro
         cv2.circle(frame, (X, Y), 10, (0, 255, 0), 2, 2)
         self.finalImage = frame
         return X, Y
 
+    def pathFinder(self):
+        """Encontra a pista se não estiver nela, se dirige até o
+         centro e alinha com a faixa pontilhada central (eu espero);"""
+        pass
 
     def identifica_cor(self, colorRgb):
         '''
