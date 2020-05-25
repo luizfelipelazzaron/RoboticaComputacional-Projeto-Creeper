@@ -40,6 +40,7 @@ import auxiliar as aux
 import visao_module
 import rospkg
 import os
+from garra_demo import MoveGroupPythonIntefaceTutorial, all_close
 
 width = "screen width"
 height = "screen height"
@@ -71,6 +72,7 @@ class Terminator():
         # todos os atributos podem se autoconstruir a
         # partir de valores default
         self.c = 0
+        self.corCreeper = [20, 145, 253]
         self.estacaoEscolhida = 'dog'
         self.counterLimit = 5
         self.results = []
@@ -81,7 +83,7 @@ class Terminator():
         self.image = None
         self.counter = 0
         self.counterLimit = 5
-        self.distancia = None
+        self.distancia = 30         #valor grande , isto é, maior que 0.2
         self.yFindOutSpeedway = 400
         self.rotationMode = False
         self.dataScan = None
@@ -157,7 +159,8 @@ class Terminator():
         self.task['procurarPista'] = False
         self.task['procurarCreeper'] = False
         self.task['percorrerPista'] = False
-        self.task['procurarEstacao'] = True
+        self.task['procurarEstacao'] = False
+        self.task['pegarCreeper'] = True
 
     def procurarPista(self):
         colorSpeedwayBorder =[255, 255, 0]
@@ -220,16 +223,19 @@ class Terminator():
             return 0.05
 
     def procurarCreeper(self):
-        cor_creeper = [20, 145, 253]
         if self.counter < self.counterLimit:
             try:
-                self.identifica_cor(cor_creeper)
-                print("achou creeper azul \o/")
-                if self.media[1] < self.yFindOutSpeedway:
+                self.identifica_cor(self.corCreeper)
+                print("achou creeper \o/")
+                print("distancia: ", self.distancia)
+                if self.distancia < 0.5:
+                    self.stop()
+                    self.counter = self.counterLimit
+                elif self.media[1] < self.yFindOutSpeedway:
                     if self.targetInCenter(self.media) and not self.rotationMode:
-                        self.move(0, 0)
+                        self.move(0.1, 0)
                     else:
-                        self.move(0.03, self.whereTo(self.media[0]))
+                        self.move(0.05, self.whereTo(self.media[0]))
                 else:
                     self.rotationMode = True
                     if self.targetInCenter(self.media):
@@ -243,15 +249,14 @@ class Terminator():
         else:
             print("mudando de estado")
             self.task['procurarCreeper'] = False
-            self.task['percorrerPista'] = True
+            self.task['pegarCreeper'] = True
             self.counter = 0
 
     def alcancarCreeper(self):
-        cor_creeper = [20, 145, 253]
-        if self.task['procurarCreeper'] == True:
+        # if self.task['procurarCreeper'] == True:
             print("area creeper azul = ", self.area)
             try:
-                self.identifica_cor(cor_creeper)
+                self.identifica_cor(self.corCreeper)
                 if self.area > 2500:
                     self.move(0.1, 0)
                 else:
@@ -259,12 +264,15 @@ class Terminator():
                     self.task['percorrerPista'] =  True
             except:
                 pass
-        else:
-            print("mudando de estado")
-            self.task['alcancarCreeper'] = False
-            self.task['percorrerPista'] = True
+        # else:
+        #     print("mudando de estado")
+        #     self.task['alcancarCreeper'] = False
+        #     self.task['percorrerPista'] = True
 
     def pegarCreeper(self):
+        print("Bora aprender a pegar o Creeper então")
+        garra = MoveGroupPythonIntefaceTutorial()
+        garra.open_gripper()
         pass
 
     def carregarCreeper(self):
