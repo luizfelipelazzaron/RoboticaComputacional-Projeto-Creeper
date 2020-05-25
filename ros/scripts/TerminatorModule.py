@@ -273,7 +273,6 @@ class Terminator():
     def procurarEstacao(self):
         if self.counter < self.counterLimit:
             try:
-                self.move(0,0.1)
                 self.identificaObjetos()
                 estacaoEncontrada = self.results[0][0]
                 if estacaoEncontrada == self.estacaoEscolhida:
@@ -287,8 +286,6 @@ class Terminator():
             self.counter = 0
             print("mudando de estado")
             self.task['procurarEstacao'] = False
-
-
 
     def alcancarEstacao(self):
         pass
@@ -315,7 +312,6 @@ class Terminator():
             thisImage = aux.drawHUD(thisImage, self.tolerance)
             cv2.imshow("Final Image", thisImage)
             cv2.waitKey(1)
-
 
     def targetInCenter(self, targetPosition):
         """targetPosition é da forma (x,y)"""
