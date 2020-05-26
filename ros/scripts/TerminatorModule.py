@@ -74,11 +74,10 @@ class Terminator():
         # todos os atributos podem se autoconstruir a
         # partir de valores default
         self.c = 0
-        self.corCreeper = verde
-        self.estacaoEscolhida = 'dog'
+        self.corCreeper = azul
         self.results = []
         self.velocidadeSaida = None
-        self.target = None
+        self.alignment = "Center"
         self.tolerance = 20
         self.estacao = None
         self.image = None
@@ -128,7 +127,9 @@ class Terminator():
         self.image = imagem
 
     def estadoAtual(self):
+                        
         if self.cvImage is not None:
+            
             if self.task['iniciar']:
                 self.iniciar()
             # Tasks relacionados a Pista
@@ -228,11 +229,11 @@ class Terminator():
 
     def whereTo(self, x):
         if x > self.visionWidth/2:
+            self.alignment = "Right"
             # corrigir para a esquerda
-            print("corrigir para a direita")
             return -0.05
         elif x < self.visionWidth/2:
-            print("corrigir para a esquerda")
+            self.alignment = "Left"
             # corrigir para a direita
             return 0.05
 
@@ -268,6 +269,7 @@ class Terminator():
                 print("area detectada = ", self.area)
                 if self.area > 11000:
                     self.counterCreeper += 1
+
                 else:
                     self.counterCreeper = 0
                 if self.media[1] < self.yFindOutSpeedway: 
@@ -346,7 +348,7 @@ class Terminator():
     def imShow(self):
         if self.finalImage is not None:
             thisImage = self.finalImage
-            thisImage = aux.drawHUD(thisImage, self.tolerance)
+            thisImage = aux.drawHUD(thisImage, self)
             cv2.imshow("Final Image", thisImage)
             cv2.waitKey(1)
 
@@ -404,6 +406,7 @@ class Terminator():
                 print("(Terminator.visionWidth, Terminator.visionHeight): ({0},{1})".format(
                     self.visionWidth, self.visionHeight))
 
+                
             
             depois = time.clock()
 
@@ -560,14 +563,9 @@ class Terminator():
             media = maior_contorno.mean(axis=0)
             media = media.astype(np.int32)
             cv2.circle(self.finalImage, (media[0], media[1]), 5, [0, 255, 0])
-            aux.cross(self.finalImage, centro[0], centro[1])
         else:
             media = (0, 0)
 
-        # Representa a area e o centro do maior contorno no frame
-        font = cv2.FONT_HERSHEY_COMPLEX_SMALL
-        cv2.putText(frame,"{:d} {:d}".format(*media),(20,100), 1, 4,(255,255,255),2,cv2.LINE_AA)
-        cv2.putText(frame,"{:0.1f}".format(maior_contorno_area),(20,50), 1, 4,(255,255,255),2,cv2.LINE_AA)
         # self.maior_contorno_area = maior_contorno_area
         self.media = media
         self.centro = centro

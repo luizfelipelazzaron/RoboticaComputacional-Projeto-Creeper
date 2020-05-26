@@ -10,7 +10,9 @@ from sensor_msgs.msg import LaserScan
 
 
 distancia = None
-
+font = cv2.FONT_HERSHEY_COMPLEX_SMALL
+HUD_COLOR = (32,255,0)
+# HUD_COLOR = (200,32,100)
 
 def to_1px(tpl):
     img = np.zeros((1, 1, 3), dtype=np.uint8)
@@ -82,21 +84,86 @@ def cross(img, x, y):
     """cross(img, x, y) recebe uma imagem (array do OpenCv),um x (float) e y(float)"""
     x = int(x)
     y = int(y)
-    cv2.line(img, (x-10, y), (x+10, y), (255,32,255), 2)
-    cv2.line(img, (x, y-10), (x, y+10), (255, 32, 255), 2)
+    line(img, x-10, y, x+10, y)
+    line(img, x, y-10, x, y+10)
     return img
 
 def line(img, x0, y0, x1, y1):
-    cv2.line(img, (x0,y0), (x1,y1), (255,32,255), 2)
+    cv2.line(img, (x0,y0), (x1,y1), (0,0,0), 2)
+    cv2.line(img, (x0,y0), (x1,y1), HUD_COLOR, 1)
 
-def drawHUD(img, tolerance):
+def text(img, text, x0, y0):
+    cv2.putText(img=img,text=text, org=(x0,y0), fontFace=1, fontScale=1, color=(0,0,0), thickness=2, lineType=cv2.LINE_AA)
+    cv2.putText(img=img,text=text, org=(x0,y0), fontFace=1, fontScale=1, color=HUD_COLOR, thickness=1, lineType=cv2.LINE_AA)
+    return img
+
+def textLines(img, array, tolerancia, position, altura=None, largura=None):
+    if position == "topLeft":
+        for index, row in enumerate(array):
+            key, value = row
+            img = text(img, "{0}: {1}".format(key,value), x0=tolerancia + 10, y0=tolerancia + 20 + index*20)
+
+    elif position == "bottomLeft":
+        for index, row in enumerate(array):
+            key, value = row
+            img = text(img, "{0}: {1}".format(key,value), x0=tolerancia + 10, y0=altura - tolerancia - 20*(len(array)-index))
+
+    return img
+
+def drawHUD(img, instance):
     """
     Desenha marcações importantes na tela;
     """
-    
-    xCentro = int(img.shape[1]/2)
-    yCentro = int(img.shape[0]/2)
+    instance.tolerance
+    largura = img.shape[1]
+    altura = img.shape[0]
+
+    xCentro = int(largura/2)
+    yCentro = int(altura/2)
+
     img = cross(img,xCentro,yCentro)
-    line(img, xCentro - tolerance, yCentro - 20, xCentro - tolerance, yCentro+20)
-    line(img, xCentro + tolerance, yCentro - 20, xCentro + tolerance, yCentro+20)
+
+    # mira central
+    line(img, xCentro - instance.tolerance, yCentro - 10, xCentro - instance.tolerance, yCentro + 10)
+    line(img, xCentro - instance.tolerance, yCentro - 10, xCentro - instance.tolerance + 10, yCentro - 10 - 10)
+    line(img, xCentro - instance.tolerance, yCentro + 10, xCentro - instance.tolerance + 10, yCentro + 10 + 10)
+    line(img, xCentro + instance.tolerance, yCentro - 10, xCentro + instance.tolerance, yCentro + 10)
+    line(img, xCentro + instance.tolerance, yCentro - 10, xCentro + instance.tolerance - 10, yCentro - 10 - 10)
+    line(img, xCentro + instance.tolerance, yCentro + 10, xCentro + instance.tolerance - 10, yCentro + 10 + 10)
+
+    # superior esquerdo
+    line(img, instance.tolerance, instance.tolerance, instance.tolerance + 100, instance.tolerance)
+    line(img, instance.tolerance, instance.tolerance, instance.tolerance, instance.tolerance + 100)
+    # inferior esquerdo
+    line(img, instance.tolerance, altura - instance.tolerance, instance.tolerance + 100, altura - instance.tolerance)
+    line(img, instance.tolerance, altura - instance.tolerance, instance.tolerance, altura - instance.tolerance - 100)
+    # superior direito
+    line(img, largura - instance.tolerance, instance.tolerance, largura - instance.tolerance - 100, instance.tolerance)
+    line(img, largura - instance.tolerance, instance.tolerance, largura - instance.tolerance, instance.tolerance + 100)
+    #inferior direito
+    line(img, largura - instance.tolerance, altura - instance.tolerance, largura - instance.tolerance - 100, altura - instance.tolerance)
+    line(img, largura - instance.tolerance, altura - instance.tolerance, largura - instance.tolerance, altura - instance.tolerance - 100)
+
+    config = np.array([
+        ["Terminator Tasks", [element for element in instance.task if instance.task[element]]],
+        ["Terminator VH", instance.visionHeight],
+        ["Terminator VW", instance.visionWidth],
+        ["Target Color", instance.corCreeper],
+        ["Terminator Tolerance",instance.tolerance],
+        ["Target Area", instance.area],
+        ["Min. Distance", instance.distancia],
+        ["Alignment",instance.alignment]
+
+    ])
+    counters = np.array([
+        ["terminator.counter", instance.counter],
+        ["terminator.counterCreeper", instance.counterCreeper],
+        ["terminator.counterPista", instance.counterPista],
+        ["terminator.counterEstacao", instance.counterEstacao],
+        ["terminator.counterLimit", instance.counterLimit]
+    ])
+    img = textLines(img, config, instance.tolerance, "topLeft")
+    img = textLines(img, counters, instance.tolerance, "bottomLeft", altura=instance.visionHeight)
+    
+
     return img
