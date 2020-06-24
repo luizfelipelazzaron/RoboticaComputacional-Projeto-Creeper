@@ -80,7 +80,6 @@ if __name__ == "__main__":
         while not rospy.is_shutdown():
             t800.estadoAtual()
             t800.imShow()
-            
 
     except rospy.ROSInterruptException:
         print("Ocorreu uma exceção com o rospy")
